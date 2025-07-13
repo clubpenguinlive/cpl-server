@@ -179,100 +179,107 @@ const GameUserMixin = {
     },
 
     async load(username) {
-        return await this.reload({
-            where: {
-                username: username
-            },
+        try {
+            const user = await this.db.users.findOne({
+                where: {
+                    username
+                },
 
-            include: [
-                {
-                    model: this.db.bans,
-                    as: 'ban',
-                    where: {
-                        expires: {
-                            [Op.gt]: Date.now()
-                        }
+                include: [
+                    {
+                        model: this.db.bans,
+                        as: 'ban',
+                        where: {
+                            expires: {
+                                [Op.gt]: Date.now()
+                            }
+                        },
+                        required: false
                     },
-                    required: false
-                },
-                {
-                    model: this.db.buddies,
-                    as: 'buddies',
-                    include: {
-                        model: this.db.users,
-                        as: 'user',
-                        attributes: ['username']
+                    {
+                        model: this.db.buddies,
+                        as: 'buddies',
+                        include: {
+                            model: this.db.users,
+                            as: 'user',
+                            attributes: ['username']
+                        },
+                        separate: true
                     },
-                    separate: true
-                },
-                {
-                    model: this.db.ignores,
-                    as: 'ignores',
-                    include: {
-                        model: this.db.users,
-                        as: 'user',
-                        attributes: ['username']
+                    {
+                        model: this.db.ignores,
+                        as: 'ignores',
+                        include: {
+                            model: this.db.users,
+                            as: 'user',
+                            attributes: ['username']
+                        },
+                        separate: true
                     },
-                    separate: true
-                },
-                {
-                    model: this.db.inventories,
-                    as: 'inventory',
-                    attributes: ['itemId'],
-                    separate: true
-                },
-                {
-                    model: this.db.iglooInventories,
-                    as: 'igloos',
-                    attributes: ['iglooId'],
-                    separate: true
-                },
-                {
-                    model: this.db.furnitureInventories,
-                    as: 'furniture',
-                    separate: true
-                },
-                {
-                    model: this.db.cards,
-                    as: 'cards',
-                    separate: true
-                },
-                {
-                    model: this.db.postcards,
-                    as: 'postcards',
-                    include: {
-                        model: this.db.users,
-                        as: 'user',
-                        attributes: ['username']
+                    {
+                        model: this.db.inventories,
+                        as: 'inventory',
+                        attributes: ['itemId'],
+                        separate: true
                     },
-                    separate: true
-                },
-                {
-                    model: this.db.pets,
-                    as: 'pets',
-                    separate: true
-                }
-            ]
+                    {
+                        model: this.db.iglooInventories,
+                        as: 'igloos',
+                        attributes: ['iglooId'],
+                        separate: true
+                    },
+                    {
+                        model: this.db.furnitureInventories,
+                        as: 'furniture',
+                        separate: true
+                    },
+                    {
+                        model: this.db.cards,
+                        as: 'cards',
+                        separate: true
+                    },
+                    {
+                        model: this.db.postcards,
+                        as: 'postcards',
+                        include: {
+                            model: this.db.users,
+                            as: 'user',
+                            attributes: ['username']
+                        },
+                        separate: true
+                    },
+                    {
+                        model: this.db.pets,
+                        as: 'pets',
+                        separate: true
+                    }
+                ]
+            })
 
-        }).then((result) => {
-            result.buddies = new BuddyCollection(this, result.buddies)
-            result.ignores = new IgnoreCollection(this, result.ignores)
-            result.inventory = new InventoryCollection(this, result.inventory)
-            result.igloos = new IglooCollection(this, result.igloos)
-            result.furniture = new FurnitureCollection(this, result.furniture)
-            result.cards = new CardCollection(this, result.cards)
-            result.postcards = new PostcardCollection(this, result.postcards)
-            result.pets = new PetCollection(this, result.pets)
+            if (!user) {
+                return false
+            }
+
+            Object.assign(this, user.get({ plain: true }))
+
+            this.buddies = new BuddyCollection(this, user.buddies)
+            this.ignores = new IgnoreCollection(this, user.ignores)
+            this.inventory = new InventoryCollection(this, user.inventory)
+            this.igloos = new IglooCollection(this, user.igloos)
+            this.furniture = new FurnitureCollection(this, user.furniture)
+            this.cards = new CardCollection(this, user.cards)
+            this.postcards = new PostcardCollection(this, user.postcards)
+            this.pets = new PetCollection(this, user.pets)
 
             this.setPermissions()
 
             return true
 
-        }).catch((error) => {
+        } catch (error) {
             //this.handler.error(error)
 
             return false
-        })
+        }
     },
 
     toJSON() {

@@ -40,42 +40,49 @@ export default {
     },
 
     async load(username, selector = null) {
-        return await this.reload({
-            where: {
-                username: username
-            },
-
-            include: [
-                {
-                    model: this.db.authTokens,
-                    as: 'authToken',
-                    where: {
-                        selector: selector
-                    },
-                    required: false
+        try {
+            const user = await this.db.users.findOne({
+                where: {
+                    username
                 },
-                {
-                    model: this.db.bans,
-                    as: 'ban',
-                    where: {
-                        expires: {
-                            [Op.gt]: Date.now()
-                        }
-                    },
-                    required: false
-                }
-            ]
 
-        }).then(() => {
+                include: [
+                    {
+                        model: this.db.authTokens,
+                        as: 'authToken',
+                        where: {
+                            selector
+                        },
+                        required: false
+                    },
+                    {
+                        model: this.db.bans,
+                        as: 'ban',
+                        where: {
+                            expires: {
+                                [Op.gt]: Date.now()
+                            }
+                        },
+                        required: false
+                    }
+                ]
+            })
+
+            if (!user) {
+                return false
+            }
+
+            Object.assign(this, user.get({ plain: true }))
+
             this.setPermissions()
 
             return true
 
-        }).catch((error) => {
-            //this.handler.error(error)
+        } catch (error) {
+            // this.handler.error(error)
 
             return false
-        })
+        }
     },
 
     setPermissions() {
