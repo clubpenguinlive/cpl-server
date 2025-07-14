@@ -1,7 +1,8 @@
 import getSocketAddress from '@objects/user/getSocketAddress'
+import RateLimiter from '../ratelimit/RateLimiter'
 import UserFactory from '@objects/user/UserFactory'
 
-import RateLimiter from '../ratelimit/RateLimiter'
+import { RateLimiterRes } from 'rate-limiter-flexible'
 
 
 export default class Server {
@@ -64,7 +65,11 @@ export default class Server {
 
             this.initUser(socket)
 
-        } catch {
+        } catch (error) {
+            if (!(error instanceof RateLimiterRes)) {
+                this.handler.error(error)
+            }
+
             socket.disconnect(true)
         }
     }
@@ -93,8 +98,10 @@ export default class Server {
 
             this.handler.handle(message, user)
 
-        } catch {
-            // Rate limited
+        } catch (error) {
+            if (!(error instanceof RateLimiterRes)) {
+                this.handler.error(error)
+            }
         }
     }
 
