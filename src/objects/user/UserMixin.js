@@ -18,6 +18,9 @@ export default {
 
         this.loginSent = false
         this.isModerator = false
+
+        // Events on cooldown
+        this.cooldowns = {}
     },
 
     send(action, args = {}) {

@@ -81,6 +81,10 @@ export default class Server {
     }
 
     async onMessage(message, user) {
+        if (this.handler.isOnCooldown(message, user)) {
+            return
+        }
+
         try {
             if (this.rateLimiter) {
                 await this.rateLimiter.addressEvents.consume(user.address)
