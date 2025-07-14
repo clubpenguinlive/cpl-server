@@ -1,7 +1,7 @@
 import getSocketAddress from '@objects/user/getSocketAddress'
 import UserFactory from '@objects/user/UserFactory'
 
-import RateLimiterFlexible from 'rate-limiter-flexible'
+import RateLimiter from '../ratelimit/RateLimiter'
 
 
 export default class Server {
@@ -13,7 +13,7 @@ export default class Server {
         this.handler = handler
         this.config = config
 
-        let io = this.createIo(config.socketio, {
+        const io = this.createIo(config.socketio, {
             cors: {
                 origin: config.cors.origin,
                 methods: ['GET', 'POST']
@@ -21,25 +21,17 @@ export default class Server {
             path: '/'
         })
 
-        if (config.rateLimit.enabled) {
-            this.connectionLimiter = this.createLimiter(config.rateLimit.addressConnectsPerSecond)
-            this.addressLimiter = this.createLimiter(config.rateLimit.addressEventsPerSecond)
-            this.userLimiter = this.createLimiter(config.rateLimit.userEventsPerSecond)
-        }
+        this.rateLimiter = config.rateLimit.enabled
+            ? new RateLimiter(config)
+            : null
 
         this.server = io.listen(config.worlds[id].port)
-        this.server.on('connection', this.onConnection.bind(this))
-    }
 
-    createLimiter(points, duration = 1) {
-        return new RateLimiterFlexible.RateLimiterMemory({
-            points: points,
-            duration: duration
-        })
+        this.server.on('connection', socket => this.onConnection(socket))
     }
 
     createIo(config, options) {
-        let server = (config.https)
+        const server = config.https
             ? this.httpsServer(config.ssl)
             : this.httpServer()
 
@@ -51,72 +43,60 @@ export default class Server {
     }
 
     httpsServer(ssl) {
-        let fs = require('fs')
-        let loaded = {}
+        const fs = require('fs')
+        const loaded = {}
 
         // Loads ssl files
-        for (let key in ssl) {
+        for (const key in ssl) {
             loaded[key] = fs.readFileSync(ssl[key]).toString()
         }
 
         return require('https').createServer(loaded)
     }
 
-    onConnection(socket) {
-        if (!this.config.rateLimit.enabled) {
+    async onConnection(socket) {
+        try {
+            if (this.rateLimiter) {
+                const address = getSocketAddress(socket, this.config)
+
+                await this.rateLimiter.addressConnects.consume(address)
+            }
+
             this.initUser(socket)
-            return
+
+        } catch {
+            socket.disconnect(true)
         }
-
-        let address = getSocketAddress(socket, this.config)
-
-        this.connectionLimiter.consume(address)
-            .then(() => {
-                this.initUser(socket)
-            })
-            .catch(() => {
-                socket.disconnect(true)
-            })
     }
 
     initUser(socket) {
-        let user = UserFactory(this, socket)
+        const user = UserFactory(this, socket)
 
         this.users[socket.id] = user
 
         console.log(`[${this.id}] Connection from: ${socket.id} ${user.address}`)
 
-        socket.on('message', (message) => this.onMessage(message, user))
+        socket.on('message', message => this.onMessage(message, user))
         socket.on('disconnect', () => this.onDisconnect(user))
     }
 
-    onMessage(message, user) {
-        if (!this.config.rateLimit.enabled) {
+    async onMessage(message, user) {
+        try {
+            if (this.rateLimiter) {
+                await this.rateLimiter.addressEvents.consume(user.address)
+                await this.rateLimiter.userEvents.consume(user.getId())
+            }
+
             this.handler.handle(message, user)
-            return
+
+        } catch {
+            // Rate limited
         }
-
-        this.addressLimiter.consume(user.address)
-            .then(() => {
-
-                let id = user.getId()
-
-                this.userLimiter.consume(id)
-                    .then(() => {
-                        this.handler.handle(message, user)
-                    })
-                    .catch(() => {
-                        // Blocked user
-                    })
-
-            })
-            .catch(() => {
-                // Blocked address
-            })
     }
 
     onDisconnect(user) {
         console.log(`[${this.id}] Disconnect from: ${user.socket.id} ${user.address}`)
+
         this.handler.close(user)
     }
 
