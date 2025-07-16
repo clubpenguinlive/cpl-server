@@ -4,9 +4,9 @@ import crypto from 'crypto'
 import { Op } from 'sequelize'
 
 
-export default {
+export default class User {
 
-    init(server, socket) {
+    constructor(server, socket) {
         this.server = server
         this.socket = socket
 
@@ -21,26 +21,26 @@ export default {
 
         // Events on cooldown
         this.cooldowns = {}
-    },
+    }
 
     send(action, args = {}) {
         this.socket.emit('message', { action: action, args: args })
-    },
+    }
 
     close() {
         this.socket.disconnect(true)
-    },
+    }
 
     getId() {
-        return (this.id) ? this.id : this.socket.id
-    },
+        return this.id ? this.id : this.socket.id
+    }
 
     createLoginHash(randomKey) {
-        let userAgent = this.socket.request.headers['user-agent']
-        let string = `${this.username}${randomKey}${this.address}${userAgent}`
+        const userAgent = this.socket.request.headers['user-agent']
+        const string = `${this.username}${randomKey}${this.address}${userAgent}`
 
         return crypto.createHash('sha256').update(string).digest('hex')
-    },
+    }
 
     async load(username, selector = null) {
         try {
@@ -82,11 +82,21 @@ export default {
             return true
 
         } catch (error) {
-            // this.handler.error(error)
+            this.handler.error(error)
 
             return false
         }
-    },
+    }
+
+    async update(updates) {
+        if (!this.id) {
+            return
+        }
+
+        Object.assign(this, updates)
+
+        return this.db.users.update(updates, { where: { id: this.id } })
+    }
 
     setPermissions() {
         this.isModerator = this.rank >= 2

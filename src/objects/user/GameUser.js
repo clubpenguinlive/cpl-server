@@ -1,4 +1,4 @@
-import UserMixin from './UserMixin'
+import User from './User'
 
 import pick from '@utils/pick'
 import { isInRange } from '@utils/validation'
@@ -18,10 +18,10 @@ import EventEmitter from 'events'
 import { Op } from 'sequelize'
 
 
-const GameUserMixin = {
+export default class GameUser extends User {
 
-    init(server, socket) {
-        super.init(server, socket)
+    constructor(server, socket) {
+        super(server, socket)
 
         this.crumbs = this.handler.crumbs
 
@@ -50,11 +50,11 @@ const GameUserMixin = {
         this.events.on('error', (error) => {
             this.handler.error(error)
         })
-    },
+    }
 
     inOwnIgloo() {
         return this.room?.isIgloo && this.room?.userId === this.id
-    },
+    }
 
     setItem(slot, item) {
         if (this[slot] == item) {
@@ -63,11 +63,11 @@ const GameUserMixin = {
 
         this.update({ [slot]: item })
         this.sendUpdatePlayer(slot, item)
-    },
+    }
 
     sendUpdatePlayer(slot, item) {
         this.room.send(this, 'update_player', { id: this.id, item: item, slot: slot }, [])
-    },
+    }
 
     joinRoom(room, x = 0, y = 0) {
         if (!room || room === this.room || this.minigameRoom || this.waddle) {
@@ -96,7 +96,7 @@ const GameUserMixin = {
         this.frame = 1
 
         this.room.add(this)
-    },
+    }
 
     joinTable(table) {
         if (table && !this.minigameRoom) {
@@ -104,7 +104,7 @@ const GameUserMixin = {
 
             this.minigameRoom.add(this)
         }
-    },
+    }
 
     addBuddy(id, username, requester = false) {
         this.buddies.add(id)
@@ -112,17 +112,17 @@ const GameUserMixin = {
         let online = id in this.handler.usersById
 
         this.send('buddy_accept', { id: id, username: username, requester: requester, online: online })
-    },
+    }
 
     removeBuddy(id) {
         this.buddies.remove(id)
 
         this.send('buddy_remove', { id: id })
-    },
+    }
 
     clearBuddyRequest(id) {
         this.buddyRequests = this.buddyRequests.filter(request => request != id)
-    },
+    }
 
     updateCoins(coins, gameOver = false) {
         coins = parseInt(coins)
@@ -136,7 +136,7 @@ const GameUserMixin = {
         if (gameOver) {
             this.send('game_over', { coins: coins || this.coins })
         }
-    },
+    }
 
     async addSystemMail(postcardId, details = null) {
         const postcard = await this.postcards.add(null, postcardId, details)
@@ -144,7 +144,7 @@ const GameUserMixin = {
         if (postcard) this.send('receive_mail', postcard)
 
         return postcard
-    },
+    }
 
     async startWalkingPet(petId) {
         if (!this.pets.includes(petId)) return
@@ -167,7 +167,7 @@ const GameUserMixin = {
 
         this.hand = petItemId
         this.sendUpdatePlayer('hand', petItemId)
-    },
+    }
 
     stopWalkingPet() {
         if (this.walkingPet) {
@@ -176,7 +176,7 @@ const GameUserMixin = {
             this.walkingPet.walking = false
             this.walkingPet = null
         }
-    },
+    }
 
     async load(username) {
         try {
@@ -276,11 +276,11 @@ const GameUserMixin = {
             return true
 
         } catch (error) {
-            //this.handler.error(error)
+            this.handler.error(error)
 
             return false
         }
-    },
+    }
 
     toJSON() {
         return pick(this,
@@ -303,7 +303,3 @@ const GameUserMixin = {
     }
 
 }
-
-Object.setPrototypeOf(GameUserMixin, UserMixin)
-
-export default { ...UserMixin, ...GameUserMixin }
