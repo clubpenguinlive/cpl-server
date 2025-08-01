@@ -1,4 +1,5 @@
 import getSocketAddress from './getSocketAddress'
+import pick from '@utils/pick'
 
 import crypto from 'crypto'
 import { Op } from 'sequelize'
@@ -100,6 +101,22 @@ export default class User {
 
     setPermissions() {
         this.isModerator = this.rank >= 2
+    }
+
+    get anonymous() {
+        return pick(this,
+            'id',
+            'username',
+            'head',
+            'face',
+            'neck',
+            'body',
+            'hand',
+            'feet',
+            'color',
+            'photo',
+            'flag',
+        )
     }
 
 }
