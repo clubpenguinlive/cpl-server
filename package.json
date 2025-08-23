@@ -24,10 +24,10 @@
   },
   "homepage": "https://github.com/wizguin/yukon-server#readme",
   "devDependencies": {
-    "@babel/cli": "^7.28.0",
-    "@babel/core": "^7.28.0",
+    "@babel/cli": "^7.28.3",
+    "@babel/core": "^7.28.3",
     "@babel/node": "^7.28.0",
-    "@babel/preset-env": "^7.28.0",
+    "@babel/preset-env": "^7.28.3",
     "babel-plugin-module-resolver": "^5.0.2",
     "babel-watch": "^7.8.1",
     "rimraf": "^6.0.1"
@@ -36,9 +36,9 @@
     "bcrypt": "^6.0.0",
     "fastest-validator": "^1.19.1",
     "jsonwebtoken": "^9.0.2",
-    "mysql2": "^3.14.2",
+    "mysql2": "^3.14.3",
     "pm2": "^6.0.8",
-    "rate-limiter-flexible": "^7.1.1",
+    "rate-limiter-flexible": "^7.2.0",
     "sequelize": "^6.37.7",
     "socket.io": "^4.8.1",
     "uuid": "^11.1.0"
