@@ -11,6 +11,8 @@ import IgnoreCollection from '@database/collections/IgnoreCollection'
 import InventoryCollection from '@database/collections/InventoryCollection'
 import PetCollection from '@database/collections/PetCollection'
 import PostcardCollection from '@database/collections/PostcardCollection'
+import SkillCollection from '@database/collections/SkillCollection'
+import ResourceCollection from '@database/collections/ResourceCollection'
 
 import PurchaseValidator from './purchase/PurchaseValidator'
 
@@ -252,6 +254,16 @@ export default class GameUser extends User {
                         model: this.db.pets,
                         as: 'pets',
                         separate: true
+                    },
+                    {
+                        model: this.db.userSkills,
+                        as: 'userSkills',
+                        separate: true
+                    },
+                    {
+                        model: this.db.userResources,
+                        as: 'userResources',
+                        separate: true
                     }
                 ]
             })
@@ -270,6 +282,8 @@ export default class GameUser extends User {
             this.cards = new CardCollection(this, user.cards)
             this.postcards = new PostcardCollection(this, user.postcards)
             this.pets = new PetCollection(this, user.pets)
+            this.skills = new SkillCollection(this, user.userSkills)
+            this.resources = new ResourceCollection(this, user.userResources)
 
             this.setPermissions()
 
