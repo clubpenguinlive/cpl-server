@@ -6,6 +6,12 @@ const tourPostcard = 126
 const agentItem = 800
 const agentPostcard = 127
 
+// Exclusive teal colour (item id 17) reserved for a single account. Gated server-side so a
+// hacked client cannot buy or equip it. TODO: set RESERVED_COLOR_USER to Viviana's user id
+// (currently the colour is held by id 1).
+const RESERVED_COLOR_ITEM = 17
+const RESERVED_COLOR_USER = 1
+
 export default class Item extends GamePlugin {
 
     constructor(handler) {
@@ -21,6 +27,11 @@ export default class Item extends GamePlugin {
     }
 
     updatePlayer(args, user) {
+        // Only the reserved owner may equip the exclusive colour.
+        if (args.item === RESERVED_COLOR_ITEM && user.id !== RESERVED_COLOR_USER) {
+            return
+        }
+
         const item = this.items[args.item]
 
         if (!item || item.type === 10 || !user.inventory.includes(args.item)) {
@@ -36,6 +47,11 @@ export default class Item extends GamePlugin {
     }
 
     addItem(args, user) {
+        // The reserved colour can't be acquired by anyone but its owner.
+        if (args.item === RESERVED_COLOR_ITEM && user.id !== RESERVED_COLOR_USER) {
+            return
+        }
+
         const item = user.validatePurchase.item(args.item)
 
         if (!item) {
