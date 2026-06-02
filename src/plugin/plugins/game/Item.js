@@ -7,10 +7,9 @@ const agentItem = 800
 const agentPostcard = 127
 
 // Exclusive teal colour (item id 17) reserved for a single account. Gated server-side so a
-// hacked client cannot buy or equip it. TODO: set RESERVED_COLOR_USER to Viviana's user id
-// (currently the colour is held by id 1).
+// hacked client cannot buy or equip it. RESERVED_COLOR_USER is Vivi (user id 5).
 const RESERVED_COLOR_ITEM = 17
-const RESERVED_COLOR_USER = 1
+const RESERVED_COLOR_USER = 5  // Vivi
 
 export default class Item extends GamePlugin {
 
