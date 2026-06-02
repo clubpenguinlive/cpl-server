@@ -1,4 +1,5 @@
 import Plugin from '@plugin/Plugin'
+import EmailManager from '@objects/email/EmailManager'
 
 import { hasProps, isLength, isString } from '@utils/validation'
 
@@ -15,7 +16,8 @@ export default class Login extends Plugin {
 
         this.events = {
             'login': this.login,
-            'token_login': this.tokenLogin
+            'token_login': this.tokenLogin,
+            'verify_code': this.verifyCode
         }
 
         this.check = this.createValidator()
@@ -32,6 +34,31 @@ export default class Login extends Plugin {
             permaBan: {
                 success: false,
                 message: 'Banned:\nYou are banned forever'
+            }
+        }
+
+        // Email verification (lightweight MFA on new/untrusted devices)
+        this.emailManager = new EmailManager(this.config)
+
+        // userId -> { code, expires, attempts }
+        this.loginCodes = new Map()
+
+        let emailConfig = this.config.email || {}
+        this.codeTtl = (emailConfig.codeExpiry || 300) * 1000
+        this.maxCodeAttempts = emailConfig.maxAttempts || 5
+
+        this.codeResponses = {
+            invalid: {
+                success: false,
+                message: 'That code is incorrect. Please try again'
+            },
+            expired: {
+                success: false,
+                message: 'That code has expired.\nPlease log in again'
+            },
+            tooMany: {
+                success: false,
+                message: 'Too many incorrect attempts.\nPlease log in again'
             }
         }
     }
@@ -75,6 +102,18 @@ export default class Login extends Plugin {
         user.close()
     }
 
+    async verifyCode(args, user) {
+        if (user.loginSent) {
+            return user.close()
+        }
+
+        // Only handle login once
+        user.loginSent = true
+
+        user.send('login', await this.checkCode(args, user))
+        user.close()
+    }
+
     // Functions
 
     createValidator() {
@@ -86,11 +125,11 @@ export default class Login extends Plugin {
                 trim: true,
                 type: 'string',
                 min: 4,
-                max: 12,
+                max: 254,
                 messages: {
-                    stringEmpty: 'You must provide your Penguin Name to enter Club Penguin',
-                    stringMin: 'Your Penguin Name is too short. Please try again',
-                    stringMax: 'Your Penguin Name is too long. Please try again',
+                    stringEmpty: 'You must provide your email to enter Club Penguin',
+                    stringMin: 'Please enter a valid email. Try again',
+                    stringMax: 'That email is too long. Try again',
                 }
             },
             password: {
@@ -126,7 +165,10 @@ export default class Login extends Plugin {
             return banned
         }
 
-        return await this.onLoginSuccess(user)
+        // Password is correct, but a fresh password login means this is a new/untrusted
+        // device (trusted devices auto-login via token_login, which skips this step).
+        // Require an email code before issuing the login key.
+        return await this.startVerification(user)
     }
 
     async compareTokens(args, user) {
@@ -163,6 +205,95 @@ export default class Login extends Plugin {
         }
 
         return await this.onLoginSuccess(user)
+    }
+
+    // Email verification (lightweight MFA)
+
+    async startVerification(user) {
+        // Only enforce the email code when we can actually deliver it (SMTP configured) or when
+        // explicitly forced for testing. Without an email on file, or before Mailgun is wired,
+        // log straight in so real users aren't locked out at a code screen they can't complete.
+        let force = this.config.email && this.config.email.forceVerification === true
+
+        if (!user.email || !(this.emailManager.enabled || force)) {
+            return await this.onLoginSuccess(user)
+        }
+
+        // Service/test accounts (e.g. the automated smoke-test login) skip the code, since no
+        // human reads their inbox. Real users are unaffected.
+        let skipFor = ((this.config.email && this.config.email.skipFor) || []).map(e => String(e).toLowerCase())
+        if (skipFor.includes(user.email.toLowerCase())) {
+            return await this.onLoginSuccess(user)
+        }
+
+        let code = this.generateCode()
+        this.loginCodes.set(user.id, { code: code, expires: Date.now() + this.codeTtl, attempts: 0 })
+
+        await this.emailManager.sendLoginCode(user.email, code)
+
+        return {
+            success: false,
+            verificationRequired: true,
+            username: user.username,
+            email: this.maskEmail(user.email)
+        }
+    }
+
+    async checkCode(args, user) {
+        if (!hasProps(args, 'username', 'code')) {
+            return this.codeResponses.invalid
+        }
+
+        if (!isString(args.code) || !isLength(args.code, 6, 6)) {
+            return this.codeResponses.invalid
+        }
+
+        let load = await user.load(args.username)
+        if (!load) {
+            return this.responses.notFound
+        }
+
+        let entry = this.loginCodes.get(user.id)
+        if (!entry || Date.now() > entry.expires) {
+            this.loginCodes.delete(user.id)
+            return this.codeResponses.expired
+        }
+
+        entry.attempts += 1
+        if (entry.attempts > this.maxCodeAttempts) {
+            this.loginCodes.delete(user.id)
+            return this.codeResponses.tooMany
+        }
+
+        if (args.code !== entry.code) {
+            return this.codeResponses.invalid
+        }
+
+        let banned = this.checkBanned(user)
+        if (banned) {
+            return banned
+        }
+
+        // Code is valid, complete the login
+        this.loginCodes.delete(user.id)
+
+        return await this.onLoginSuccess(user)
+    }
+
+    generateCode() {
+        return String(crypto.randomInt(0, 1000000)).padStart(6, '0')
+    }
+
+    maskEmail(email) {
+        let [name, domain] = email.split('@')
+        if (!domain) {
+            return email
+        }
+
+        let shown = name.slice(0, 2)
+        let hidden = '*'.repeat(Math.max(name.length - 2, 1))
+
+        return `${shown}${hidden}@${domain}`
     }
 
     checkBanned(user) {

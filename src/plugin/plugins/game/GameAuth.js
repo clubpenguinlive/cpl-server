@@ -84,9 +84,13 @@ export default class GameAuth extends GamePlugin {
             token = await this.genAuthToken(user)
         }
 
-        // Disconnect if already logged in
+        // Disconnect if already logged in. Tell the old session why (so its client can show a
+        // "logged in from another tab/device" message), then close it after a short delay so the
+        // reason message reaches the client before the socket drops.
         if (user.id in this.usersById) {
-            this.usersById[user.id].close()
+            const existing = this.usersById[user.id]
+            try { existing.send('disconnect_reason', { reason: 'duplicate' }) } catch (e) {}
+            setTimeout(() => { try { existing.close() } catch (e) {} }, 150)
         }
 
         // Success

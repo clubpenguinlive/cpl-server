@@ -3,6 +3,11 @@ import GamePlugin from '@plugin/GamePlugin'
 import { isInRange } from '@utils/validation'
 
 
+// Igloo types that actually have client art/scene. Types outside this set exist in the catalog
+// data (name/cost only) but have no renderable scene, so they must not be bought or applied.
+const RENDERABLE_IGLOOS = new Set([1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13])
+
+
 export default class Igloo extends GamePlugin {
 
     constructor(handler) {
@@ -28,6 +33,11 @@ export default class Igloo extends GamePlugin {
     // Events
 
     async addIgloo(args, user) {
+        // Don't sell an igloo type that has no renderable scene (would load broken).
+        if (!RENDERABLE_IGLOOS.has(Number(args.igloo))) {
+            return
+        }
+
         let igloo = user.validatePurchase.igloo(args.igloo)
 
         if (!igloo) {
@@ -58,6 +68,11 @@ export default class Igloo extends GamePlugin {
         let igloo = this.getIgloo(user.id)
 
         if (!igloo || igloo != user.room || igloo.type == args.type) {
+            return
+        }
+
+        // Never switch to an unimplemented igloo type (no renderable scene).
+        if (!RENDERABLE_IGLOOS.has(Number(args.type))) {
             return
         }
 

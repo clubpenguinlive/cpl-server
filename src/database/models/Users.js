@@ -20,6 +20,10 @@ export default class Users extends BaseModel {
                     type: DataTypes.STRING(12),
                     allowNull: false
                 },
+                email: {
+                    type: DataTypes.STRING(254),
+                    allowNull: true
+                },
                 password: {
                     type: DataTypes.STRING(60),
                     allowNull: false

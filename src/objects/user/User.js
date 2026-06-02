@@ -47,7 +47,7 @@ export default class User {
         try {
             const user = await this.db.users.findOne({
                 where: {
-                    username
+                    [Op.or]: [{ username: username }, { email: username }]
                 },
 
                 include: [

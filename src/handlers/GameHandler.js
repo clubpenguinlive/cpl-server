@@ -7,6 +7,7 @@ import TableFactory from '@objects/room/table/TableFactory'
 import Waddle from '@objects/room/waddle/Waddle'
 
 import data from '@data/data'
+import BotManager from '@objects/bot/BotManager'
 
 
 export default class GameHandler extends BaseHandler {
@@ -36,6 +37,11 @@ export default class GameHandler extends BaseHandler {
         this.startPlugins('/game')
 
         this.updateWorldPopulation()
+
+        if (id === 'Blizzard' && config.bots && config.bots.enabled) {
+            this.botManager = new BotManager(this)
+            this.botManager.start()
+        }
     }
 
     setRooms() {
