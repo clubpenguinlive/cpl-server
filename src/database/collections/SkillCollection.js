@@ -1,6 +1,6 @@
 import Collection from '../Collection'
 
-import { SKILLS, MAX_XP, levelForXp, xpToNext } from '@utils/skills'
+import { SKILLS, MAX_XP, levelForXp, xpToNext, progressForXp } from '@utils/skills'
 
 
 export default class SkillCollection extends Collection {
@@ -56,7 +56,7 @@ export default class SkillCollection extends Collection {
         let out = {}
         for (let skill of SKILLS) {
             let xp = this.getXp(skill)
-            out[skill] = { xp, level: levelForXp(xp), toNext: xpToNext(xp) }
+            out[skill] = { xp, level: levelForXp(xp), toNext: xpToNext(xp), progress: progressForXp(xp) }
         }
         return out
     }
