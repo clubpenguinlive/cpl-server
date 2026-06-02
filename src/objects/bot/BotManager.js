@@ -1,22 +1,23 @@
 import Bot from './Bot'
 
 // Preset NPCs (rooms must be valid non-game room ids from data/rooms.json).
+// Outfits use item ids verified to have worn paper art on disk; slots: head/face/neck/body/hand/feet.
 const PRESETS = [
-    { name: 'Aunt Arctic',  color: 1,  room: 110, role: 'quest_giver', phrases: ['Have you read the latest paper?', "I'm working on a big story!", 'Knowledge is power!'] },
-    { name: 'Gary',         color: 12, room: 803, role: 'quest_giver', phrases: ['Fascinating!', 'My latest invention is almost ready!', 'For science!'] },
-    { name: 'Cadence',      color: 9,  room: 120, role: 'wanderer',    phrases: ["Let's dance!", 'Feel the beat!', "You've got the moves!"] },
-    { name: 'Rockhopper',   color: 6,  room: 800, role: 'shopkeeper',  phrases: ['Arrr!', 'Yarr, welcome aboard!', 'Yo ho ho!'] },
-    { name: 'Franky',       color: 4,  room: 100, role: 'wanderer',    phrases: ['Hey there!', 'Nice day for a waddle!', 'Rock on!'] },
-    { name: 'G Billy',      color: 2,  room: 230, role: 'wanderer',    phrases: ['Howdy!', 'Sledding is the best!'] },
-    { name: 'Petey K',      color: 11, room: 120, role: 'wanderer',    phrases: ['Tune in!', 'Music Jam soon!'] },
-    { name: 'Stompin Bob',  color: 8,  room: 300, role: 'wanderer',    phrases: ['Whoa!', 'Plaza party!'] },
-    { name: 'Sensei',       color: 14, room: 320, role: 'trainer',     phrases: ['Patience, young one.', 'Card-Jitsu awaits.', 'Hmmm.'] },
-    { name: 'Dot',          color: 13, room: 300, role: 'wanderer',    phrases: ['Stay sharp!', 'I blend in anywhere.'] },
-    { name: 'Jet Pack Guy', color: 5,  room: 803, role: 'wanderer',    phrases: ['Mission ready.', 'Always alert.'] },
-    { name: 'PH',           color: 3,  room: 310, role: 'shopkeeper',  phrases: ['Puffles need love!', 'Adopt a puffle today!'] },
-    { name: 'Herbert',      color: 7,  room: 806, role: 'wanderer',    phrases: ["It's so cold!", 'One day this island will be mine!'] },
-    { name: 'Rookie',       color: 6,  room: 100, role: 'wanderer',    phrases: ['Hiya!', 'Did I do that right?'] },
-    { name: 'Cara',         color: 15, room: 130, role: 'wanderer',    phrases: ['Love the new styles!', 'So many outfits!'] }
+    { name: 'Aunt Arctic',  color: 1,  room: 110, role: 'quest_giver', face: 113, neck: 175, body: 224, feet: 365, phrases: ['Have you read the latest paper?', "I'm working on a big story!", 'Knowledge is power!'] },
+    { name: 'Gary',         color: 12, room: 803, role: 'quest_giver', head: 115, neck: 176, body: 769, feet: 352, phrases: ['Fascinating!', 'My latest invention is almost ready!', 'For science!'] },
+    { name: 'Cadence',      color: 9,  room: 120, role: 'wanderer',    head: 481, body: 773, hand: 233, feet: 386, phrases: ["Let's dance!", 'Feel the beat!', "You've got the moves!"] },
+    { name: 'Rockhopper',   color: 6,  room: 800, role: 'shopkeeper',  face: 110, neck: 162, body: 231, feet: 374, phrases: ['Arrr!', 'Yarr, welcome aboard!', 'Yo ho ho!'] },
+    { name: 'Franky',       color: 4,  room: 100, role: 'wanderer',    head: 407, body: 773, hand: 338, feet: 357, phrases: ['Hey there!', 'Nice day for a waddle!', 'Rock on!'] },
+    { name: 'G Billy',      color: 2,  room: 230, role: 'wanderer',    head: 405, body: 223, hand: 234, feet: 372, phrases: ['Howdy!', 'Sledding is the best!'] },
+    { name: 'Petey K',      color: 11, room: 120, role: 'wanderer',    head: 1069, body: 221, hand: 731, feet: 387, phrases: ['Tune in!', 'Music Jam soon!'] },
+    { name: 'Stompin Bob',  color: 8,  room: 300, role: 'wanderer',    head: 402, body: 222, hand: 730, feet: 352, phrases: ['Whoa!', 'Plaza party!'] },
+    { name: 'Sensei',       color: 14, room: 320, role: 'trainer',     face: 104, neck: 162, body: 221, feet: 380, phrases: ['Patience, young one.', 'Card-Jitsu awaits.', 'Hmmm.'] },
+    { name: 'Dot',          color: 13, room: 300, role: 'wanderer',    face: 101, neck: 303, body: 221, feet: 352, phrases: ['Stay sharp!', 'I blend in anywhere.'] },
+    { name: 'Jet Pack Guy', color: 5,  room: 803, role: 'wanderer',    head: 441, face: 125, body: 285, feet: 372, phrases: ['Mission ready.', 'Always alert.'] },
+    { name: 'PH',           color: 3,  room: 310, role: 'shopkeeper',  head: 446, neck: 189, body: 265, feet: 373, phrases: ['Puffles need love!', 'Adopt a puffle today!'] },
+    { name: 'Herbert',      color: 7,  room: 806, role: 'wanderer',    head: 429, body: 223, feet: 372, phrases: ["It's so cold!", 'One day this island will be mine!'] },
+    { name: 'Rookie',       color: 6,  room: 100, role: 'wanderer',    head: 413, face: 112, body: 222, feet: 386, phrases: ['Hiya!', 'Did I do that right?'] },
+    { name: 'Cara',         color: 15, room: 130, role: 'wanderer',    head: 410, face: 117, neck: 315, body: 780, feet: 386, phrases: ['Love the new styles!', 'So many outfits!'] }
 ]
 
 export default class BotManager {
