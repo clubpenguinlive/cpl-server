@@ -7,6 +7,16 @@ import { isInRange } from '@utils/validation'
 // data (name/cost only) but have no renderable scene, so they must not be bought or applied.
 const RENDERABLE_IGLOOS = new Set([1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13])
 
+// Max furniture a single igloo can hold; bounds the bulkCreate so a malformed/huge
+// furniture array can't flood the DB.
+const MAX_IGLOO_FURNITURE = 200
+
+function clampNum(value, min, max, fallback = min) {
+    const n = Number(value)
+    if (!Number.isFinite(n)) return fallback
+    return Math.min(Math.max(n, min), max)
+}
+
 
 export default class Igloo extends GamePlugin {
 
@@ -99,14 +109,23 @@ export default class Igloo extends GamePlugin {
             return
         }
 
+        // Reject obviously-abusive payloads outright (a legit client respects the igloo cap).
+        if (args.furniture.length > MAX_IGLOO_FURNITURE) {
+            return
+        }
+
         await igloo.clearFurniture()
 
         let quantities = {}
 
         for (let item of args.furniture) {
+            if (!item) {
+                continue
+            }
+
             let id = item.furnitureId
 
-            if (!item || !user.furniture.includes(id)) {
+            if (!user.furniture.includes(id)) {
                 continue
             }
 
@@ -118,7 +137,15 @@ export default class Igloo extends GamePlugin {
                 continue
             }
 
-            igloo.furniture.push({ ...item, userId: user.id })
+            // Persist only validated fields with clamped placement, never the raw client object.
+            igloo.furniture.push({
+                furnitureId: id,
+                x: clampNum(item.x, 0, 1520),
+                y: clampNum(item.y, 0, 960),
+                rotation: clampNum(item.rotation, 0, 360),
+                frame: clampNum(item.frame, 0, 100, 1),
+                userId: user.id
+            })
         }
 
         this.db.furnitures.bulkCreate(igloo.furniture)
