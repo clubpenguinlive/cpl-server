@@ -87,7 +87,10 @@ export default class Minigame extends GamePlugin {
                 .catch(error => this.handler.error(error))
 
             if (cfg.resource) {
-                let quantity = Math.max(1, Math.floor(baseCoins / COINS_PER_RESOURCE))
+                // Level-gated gathering buff: higher skill = more resources per game (+2%/level), server-side.
+                const level = user.skills.getLevel(cfg.skill)
+                const dropBonus = 1 + Math.min(level, 99) * 0.02
+                let quantity = Math.max(1, Math.floor((baseCoins / COINS_PER_RESOURCE) * dropBonus))
                 user.resources.addQuantity(cfg.resource, quantity)
             }
         }
