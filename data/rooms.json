@@ -240,6 +240,14 @@
         "spawn": 0
     },
     {
+        "id": 905,
+        "name": "mine",
+        "member": 0,
+        "maxUsers": 80,
+        "game": 1,
+        "spawn": 0
+    },
+    {
         "id": 907,
         "name": "mission1",
         "member": 0,
