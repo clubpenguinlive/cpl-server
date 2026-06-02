@@ -34,3 +34,11 @@ export function xpToNext(xp) {
     if (lvl >= MAX_LEVEL) return 0
     return CUM[lvl + 1] - xp
 }
+
+// Fraction (0-1) into the current level, for progress bars.
+export function progressForXp(xp) {
+    const lvl = levelForXp(xp)
+    if (lvl >= MAX_LEVEL) return 1
+    const cur = CUM[lvl], next = CUM[lvl + 1]
+    return Math.max(0, Math.min(1, (xp - cur) / (next - cur)))
+}
