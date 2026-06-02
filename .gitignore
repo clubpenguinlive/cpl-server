@@ -120,3 +120,7 @@ config.json
 
 # exported json
 utils/json
+
+# never commit runtime config / secrets
+config/config.json
+config/*.bak*
