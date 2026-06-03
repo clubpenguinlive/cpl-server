@@ -2,25 +2,25 @@
     {
         "id": 100,
         "roomId": 230,
-        "seats": 4,
+        "seats": 1,
         "game": "sled"
     },
     {
         "id": 101,
         "roomId": 230,
-        "seats": 3,
+        "seats": 1,
         "game": "sled"
     },
     {
         "id": 102,
         "roomId": 230,
-        "seats": 2,
+        "seats": 1,
         "game": "sled"
     },
     {
         "id": 103,
         "roomId": 230,
-        "seats": 2,
+        "seats": 1,
         "game": "sled"
     },
     {

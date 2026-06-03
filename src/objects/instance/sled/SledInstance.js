@@ -10,7 +10,9 @@ export default class SledInstance extends BaseInstance {
 
         this.id = 999
 
-        this.coins = [20, 10, 5, 5]
+        // Placement payout (coins) routed through the Sledding economy below. Mirrors
+        // GAME_ECONOMY[999] (skill 'sledding', maxCoins 800). Solo = always 1st = 120.
+        this.payouts = [120, 90, 60, 40]
     }
 
     addListeners(user) {
@@ -53,7 +55,29 @@ export default class SledInstance extends BaseInstance {
 
     sendGameOver(user) {
         this.remove(user)
-        user.updateCoins(this.coins.shift(), true)
+
+        // SERVER-AUTHORITATIVE Sledding payout: placement coins, capped + level-multiplied, with
+        // Sledding XP. (Sledding has no gathered resource.) Keeps the native Sled Racing on the same
+        // economy as the other minigames; never trusts a client-reported amount.
+        const payout = this.payouts.length ? this.payouts.shift() : 40
+        const maxCoins = 800
+        const base = Math.min(payout, maxCoins)
+
+        const level = user.skills.getLevel('sledding')
+        const coins = Math.floor(base * (1 + Math.min(level, 99) * 0.01))
+
+        user.updateCoins(coins, true)
+
+        if (base > 0) {
+            user.skills.addXp('sledding', base * 2)
+                .then(result => {
+                    if (result && result.leveledUp && user.room) {
+                        user.room.send(user, 'send_message',
+                            { id: user.id, message: `reached Sledding level ${result.level}!` }, [], false)
+                    }
+                })
+                .catch(() => {})
+        }
     }
 
 }
