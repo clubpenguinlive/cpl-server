@@ -248,6 +248,14 @@
         "spawn": 0
     },
     {
+        "id": 906,
+        "name": "jetpack",
+        "member": 0,
+        "maxUsers": 80,
+        "game": 1,
+        "spawn": 0
+    },
+    {
         "id": 907,
         "name": "mission1",
         "member": 0,
@@ -381,6 +389,14 @@
         "member": 0,
         "maxUsers": 80,
         "game": 1,
+        "spawn": 0
+    },
+    {
+        "id": 330,
+        "name": "pizza",
+        "member": 0,
+        "maxUsers": 80,
+        "game": 0,
         "spawn": 0
     }
 ]
