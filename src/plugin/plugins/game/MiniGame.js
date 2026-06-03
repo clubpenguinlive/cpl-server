@@ -9,7 +9,7 @@ const GAME_ECONOMY = {
     904: { skill: 'fishing', maxCoins: 800,  resource: 'fish'  },   // Ice Fishing
     905: { skill: 'mining',  maxCoins: 800,  resource: 'ore'   },   // Cart Surfer / Mine
     912: { skill: 'surfing', maxCoins: 1200, resource: 'shell' },   // Catchin' Waves
-    999: { skill: 'surfing', maxCoins: 800,  resource: 'shell' },   // Sled Racing
+    999: { skill: 'sledding', maxCoins: 800 },   // Sled Racing (html5 single-player, placement payout)
     900: { skill: null, maxCoins: 800 },    // Astro Barrier
     902: { skill: null, maxCoins: 800 },    // Bits and Bolts
     903: { skill: null, maxCoins: 800 },    // Hydro Hopper
