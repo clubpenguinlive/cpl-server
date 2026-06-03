@@ -1,6 +1,6 @@
 // Skill / profession definitions + XP curve.
 // XP per level step: 100 (levels 1-10), 500 (10-30), 2000 (30-50), 10000 (50-99).
-export const SKILLS = ['fishing', 'cooking', 'mining', 'surfing', 'hauling', 'performing', 'agent']
+export const SKILLS = ['fishing', 'cooking', 'mining', 'surfing', 'hauling', 'performing', 'agent', 'sledding']
 export const MAX_LEVEL = 99
 
 function stepForLevel(level) {
