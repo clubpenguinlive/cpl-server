@@ -446,5 +446,13 @@
         "maxUsers": 80,
         "game": 0,
         "spawn": 0
+    },
+    {
+        "id": 815,
+        "name": "underwater",
+        "member": 0,
+        "maxUsers": 80,
+        "game": 0,
+        "spawn": 0
     }
 ]
