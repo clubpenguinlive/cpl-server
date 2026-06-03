@@ -438,5 +438,13 @@
         "maxUsers": 80,
         "game": 0,
         "spawn": 0
+    },
+    {
+        "id": 814,
+        "name": "hiddenlake",
+        "member": 0,
+        "maxUsers": 80,
+        "game": 0,
+        "spawn": 0
     }
 ]
