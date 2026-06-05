@@ -370,6 +370,12 @@ export default class CardInstance extends BaseInstance {
         }
 
         if (user.ninjaProgress >= 100) this.rankUp(user)
+
+        // Flat, server-authoritative Card-Jitsu coin payout. The server judges the match
+        // outcome (no client-reported amount is trusted), so this is inherently capped at the
+        // fixed flat amount. Modest interim values matching Connect Four (win 10 / loss 5);
+        // no skill mapping yet (reserved). Covers both PvP (998) and Sensei (951, via super).
+        user.updateCoins(won ? 10 : 5, true)
     }
 
     checkNoBeltWin(user, won) {

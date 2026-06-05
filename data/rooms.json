@@ -454,5 +454,45 @@
         "maxUsers": 80,
         "game": 0,
         "spawn": 0
+    },
+    {
+        "id": 816,
+        "name": "eco",
+        "member": 0,
+        "maxUsers": 80,
+        "game": 0,
+        "spawn": 0
+    },
+    {
+        "id": 340,
+        "name": "stage",
+        "member": 0,
+        "maxUsers": 80,
+        "game": 0,
+        "spawn": 0
+    },
+    {
+        "id": 850,
+        "name": "hq",
+        "member": 0,
+        "maxUsers": 80,
+        "game": 0,
+        "spawn": 0
+    },
+    {
+        "id": 421,
+        "name": "shiphold",
+        "member": 0,
+        "maxUsers": 80,
+        "game": 0,
+        "spawn": 0
+    },
+    {
+        "id": 422,
+        "name": "shipnest",
+        "member": 0,
+        "maxUsers": 80,
+        "game": 0,
+        "spawn": 0
     }
 ]
