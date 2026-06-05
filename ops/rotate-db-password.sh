@@ -10,18 +10,22 @@
 #   3. /opt/yukon/client/create/scripts/php/db-config.php    (password) - registration
 #   4. /opt/backups/.my.cnf                          (password=)  - nightly mysqldump
 #
-# Design (fixes the old one-shot sed script):
+# Design:
 #   * Generates a fresh random password and writes it to EVERY consumer by FIELD/KEY
-#     (each file is parsed and rewritten, never matched against the old value), so the
-#     script is fully idempotent and safe to re-run: every run converges all consumers
-#     AND the DB to the same fresh value.
-#   * Writes all config files and verifies they took BEFORE altering the live DB, so a
-#     failed write aborts with the DB unchanged (no half-rotation).
+#     (each file is parsed and rewritten, never matched against the old value), so it
+#     is fully idempotent and safe to re-run: every run converges all consumers AND the
+#     DB to the same fresh value.
+#   * Writes + verifies all config files BEFORE altering the live DB (no half-rotation).
 #   * set -euo pipefail: any step failing aborts.
-#   * No password is ever passed on a command line (no `mysql -p<pw>`); MySQL admin uses
-#     root auth_socket, and the post-rotation auth check uses the .my.cnf via --defaults-file.
+#   * Secret hygiene: the new password is NEVER placed on a process command line.
+#       - subprocesses receive it via an exported env var (NEW), not argv
+#         (/proc/<pid>/environ is uid-restricted; /proc/<pid>/cmdline is world-readable);
+#       - the ALTER USER statement is fed to mysql on stdin (printf is a shell builtin);
+#       - MySQL admin uses root auth_socket (no -p<pw>); MariaDB redacts ALTER USER
+#         passwords in its logs;
+#       - the new value is written to a root-only 0600 file, NOT echoed to the terminal.
 #   * Health-checks after restart: PHP connects, yukon auths via .my.cnf, both pm2 apps
-#     are online, no DB access-denied in recent logs, and the nightly backup runs.
+#     online, no DB access-denied in recent logs, and the nightly backup runs.
 #
 set -euo pipefail
 
@@ -39,24 +43,26 @@ for f in "$CFG_SERVER" "$CFG_ACCOUNT" "$CFG_CREATE" "$MYCNF"; do
   [ -f "$f" ] || { echo "ERROR: consumer missing: $f (aborting before any change)"; exit 1; }
 done
 
-NEW="$(openssl rand -hex 24)"
+# Exported so child processes inherit it via the environment (not argv).
+export NEW; NEW="$(openssl rand -hex 24)"
 echo ">> generated new password"
 
 # --- 1. write NEW into every consumer (parse + rewrite, keyed; idempotent) ---
+# Files are opened in truncate-in-place mode, so root editing them preserves the
+# existing owner/permissions. The secret is read from $NEW in the environment.
 
-# server config.json (run as the app user to preserve ownership)
-sudo -u "$APP_USER" python3 - "$CFG_SERVER" "$NEW" <<'PY'
-import json, sys
-path, new = sys.argv[1], sys.argv[2]
+python3 - "$CFG_SERVER" <<'PY'
+import json, os, sys
+path = sys.argv[1]
 with open(path) as f: d = json.load(f)
-d.setdefault("database", {})["password"] = new
-with open(path, "w") as f: json.dump(d, f, indent=4); f.write("\n")
+d.setdefault("database", {})["password"] = os.environ["NEW"]
+with open(path, "w") as f:
+    json.dump(d, f, indent=4); f.write("\n")
 PY
 
-# both PHP db-config.php (parse via php, rewrite canonically, preserve other keys)
 for f in "$CFG_ACCOUNT" "$CFG_CREATE"; do
-  sudo -u "$APP_USER" php -r '
-    $p=$argv[1]; $new=$argv[2];
+  php -r '
+    $p=$argv[1]; $new=getenv("NEW");
     $c=require $p;
     if(!is_array($c)) { fwrite(STDERR,"not a config array: $p\n"); exit(1); }
     $c["password"]=$new;
@@ -64,11 +70,16 @@ for f in "$CFG_ACCOUNT" "$CFG_CREATE"; do
     foreach($c as $k=>$v){ $out.="        ".var_export((string)$k,true)." => ".var_export((string)$v,true).",\n"; }
     $out.="    ];\n";
     file_put_contents($p,$out);
-  ' "$f" "$NEW"
+  ' "$f"
 done
 
-# backup .my.cnf (root-owned): replace the password= line by key
-sed -i -E "s/^(password[[:space:]]*=).*/\1${NEW}/" "$MYCNF"
+python3 - "$MYCNF" <<'PY'
+import os, re, sys
+path = sys.argv[1]
+lines = open(path).read().splitlines()
+out = [("password=" + os.environ["NEW"]) if re.match(r"^\s*password\s*=", l) else l for l in lines]
+open(path, "w").write("\n".join(out) + "\n")
+PY
 
 # --- 2. verify all four hold NEW before touching the DB ---
 miss=0
@@ -78,8 +89,8 @@ done
 [ "$miss" -eq 0 ] || { echo "ABORT: a consumer file was not updated; DB NOT changed. Fix and re-run (safe)."; exit 1; }
 echo ">> all 4 consumer files updated"
 
-# --- 3. rotate the live DB password (configs already hold NEW) ---
-mysql -e "ALTER USER '${DB_USER}'@'localhost' IDENTIFIED BY '${NEW}'; FLUSH PRIVILEGES;"
+# --- 3. rotate the live DB password (fed on stdin so it never lands in argv) ---
+printf "ALTER USER '%s'@'localhost' IDENTIFIED BY '%s';\nFLUSH PRIVILEGES;\n" "$DB_USER" "$NEW" | mysql
 echo ">> MySQL user '${DB_USER}' password rotated"
 
 # --- 4. restart the game server (as the app user) so it reconnects ---
@@ -115,7 +126,11 @@ echo "   no DB auth errors in recent server logs"
 
 bash /opt/yukon/backup-db.sh >/dev/null 2>&1 && echo "   nightly backup: OK" || { echo "   nightly backup: FAILED"; exit 1; }
 
+# --- 6. hand the new password to the operator WITHOUT echoing it to the terminal ---
+OUTFILE="/root/.yukon-db-rotation-$(date +%Y%m%d-%H%M%S)"
+( umask 077; printf '%s / %s\n' "$DB_USER" "$NEW" > "$OUTFILE" )
 echo ""
-echo ">> ROTATION COMPLETE. Store this new password in your password manager:"
-echo "      ${DB_USER} / ${NEW}"
-echo "   (it now lives only in the prod config files; it is not stored anywhere else.)"
+echo ">> ROTATION COMPLETE."
+echo "   The new password was written to a root-only file (mode 0600), not printed."
+echo "   Retrieve it, store it in your password manager, then delete the file:"
+echo "      sudo cat $OUTFILE   &&   sudo rm $OUTFILE"
