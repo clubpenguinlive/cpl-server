@@ -27,6 +27,21 @@ edit + commit + push   →   deploy to prod   →   build + restart   →   veri
 - prod has `git config receive.denyCurrentBranch updateInstead`
 - prod's GitHub (`cpl`) push URL is disabled
 
+## First-time provisioning (new / rebuilt target)
+
+`config/config.json` (DB creds, crypto secret) is **gitignored and never shipped by git push**.
+On a fresh target, create it once from the example and fill it in:
+
+```bash
+ssh nick@10.0.0.72
+cp /opt/yukon/server/config/config_example.json /opt/yukon/server/config/config.json
+# then edit config.json: real DB password, crypto.secret, etc.
+```
+
+`deploy.sh` runs a **pre-flight** that refuses to deploy (before pushing anything) if
+`config.json` is missing or not valid JSON with a non-empty DB password, so a bad/absent config
+aborts the deploy instead of crash-looping the live server after the destructive build+restart.
+
 ## Deploy
 
 From this repo on dev-01:
