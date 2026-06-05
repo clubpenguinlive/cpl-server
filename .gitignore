@@ -124,3 +124,6 @@ utils/json
 # never commit runtime config / secrets
 config/config.json
 config/*.bak*
+
+# verify-game skill screenshot output
+verify_game.png
