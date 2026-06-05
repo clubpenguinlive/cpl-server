@@ -98,13 +98,15 @@ done
 mysql --defaults-file="$MYCNF" -e "SELECT 1" >/dev/null 2>&1 \
   && echo "   yukon via .my.cnf: OK" || { echo "   yukon via .my.cnf: FAILED"; exit 1; }
 
-sudo -u "$APP_USER" bash -lc 'pm2 jlist' 2>/dev/null | python3 -c '
-import json,sys
-procs={p["name"]:p["pm2_env"]["status"] for p in json.load(sys.stdin)}
-bad=[f"{n}={procs.get(n,\"ABSENT\")}" for n in ("Login","Blizzard") if procs.get(n)!="online"]
-if bad: print("   pm2 NOT healthy:", bad); sys.exit(1)
-print("   pm2 Login+Blizzard: online")
-' || exit 1
+sudo -u "$APP_USER" bash -lc 'pm2 jlist' 2>/dev/null | python3 -c "$(cat <<'PY'
+import json, sys
+procs = {p['name']: p['pm2_env']['status'] for p in json.load(sys.stdin)}
+bad = {n: procs.get(n, 'ABSENT') for n in ('Login', 'Blizzard') if procs.get(n) != 'online'}
+if bad:
+    print('   pm2 NOT healthy:', bad); sys.exit(1)
+print('   pm2 Login+Blizzard: online')
+PY
+)" || exit 1
 
 if sudo -u "$APP_USER" bash -lc 'tail -n 80 ~/.pm2/logs/*error*.log 2>/dev/null' | grep -qiE "access denied|ER_ACCESS_DENIED|ER_DBACCESS_DENIED"; then
   echo "   WARNING: DB access-denied in recent server logs (check pm2 logs)"; exit 1
