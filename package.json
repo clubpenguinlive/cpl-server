@@ -11,7 +11,8 @@
     "list": "pm2 list",
     "logs": "pm2 logs",
     "monit": "pm2 monit",
-    "secret-gen": "node ./utils/secret-gen.js"
+    "secret-gen": "node ./utils/secret-gen.js",
+    "migrate": "node ./utils/migrate.js"
   },
   "repository": {
     "type": "git",
