@@ -150,13 +150,14 @@ moot: no `package.json`/lockfile, zero npm deps. **Only optional residue:** `sty
 remains (one inline `<style>` block) — tightenable later by externalizing the stylesheet, low value.
 **Do NOT touch the game domain's CSP** — Ruffle/Phaser there genuinely need eval.
 
-### 2.10 Version-control the prod ops scripts — **[ready]**
-**What:** Three prod-only **untracked** scripts (not two): `/opt/yukon/recover_rebuild.sh`,
-`/opt/yukon/backup-db.sh`, and `/opt/yukon/apply_csp.sh`. Only `server/ops/rotate-db-password.sh` is
-tracked. `recover_rebuild.sh` **hardcodes the sudo password** (`private-penguin-2026`). **Fix:** move
-all three under `server/ops/` (or a small `ops/` in each repo), and replace the hardcoded-sudo swap
-step with a NOPASSWD sudoers rule. **Effort:** S. **Risk:** low; mind that `recover_rebuild.sh` is the
-load-bearing client build (never `npm run build` directly — wipes `dist`).
+### 2.10 Version-control the prod ops scripts — **[done 2026-06-06]**
+**Done:** all three (`recover_rebuild.sh`, `backup-db.sh`, `apply_csp.sh`) are now under `ops/` in
+the server repo alongside `rotate-db-password.sh`, with a mapping README. The hardcoded sudo password
+(`private-penguin-2026`, in `recover_rebuild.sh` **and** `apply_csp.sh`) is removed:
+`recover_rebuild.sh`'s swap step is now best-effort `sudo -n` (no-ops since swap exists);
+`apply_csp.sh` uses interactive `sudo`. Live `/opt/yukon` copies updated and the sanitized
+`recover_rebuild.sh` re-tested (chrome + rotate-overlay verify lines pass). A NOPASSWD sudoers rule
+for unattended swap/nginx is still the optional next step but not required for normal deploys.
 
 ---
 
@@ -211,10 +212,11 @@ Pizzatron (Cooking) is the obvious port per the fork audit.
 | **Tablet-nav anchoring** | Mobile float-nav is keyed to in-canvas HUD pixel coords + a width-only 700px breakpoint; fragile on ~1.5-1.6 aspect tablets (flagged by code-review). | [watch-it-render] | S-M |
 | **Single credential source** | DB creds live in 4 hand-synced copies (server config.json, 2× PHP db-config, .my.cnf). One source the PHP + server both read. INFRA §5/§9. | [ready] | M |
 | **Off-prod / atomic builds** | Server `npm run build` does `rimraf dist` first → a failed build wipes `dist`, no rollback; client builds on prod too. Build-to-temp-then-swap. INFRA §9. | [ready] | M |
-| **Migration runner** | No schema-migration system (CPJourney has one). Both Stamps + Daily-Challenges specs need a new table — adopt a runner first as the enabler. CPJOURNEY_AUDIT. | [ready] | M (enabler) |
+| **Migration runner** | **DONE 2026-06-06.** `utils/migrate.js` + `migrations/` + `npm run migrate` (`--status`), tracked in `schema_migrations`. Inaugural `0001_user_challenges.sql` (the Daily-Challenges table per spec) applied + verified on prod; `UserChallenges` model wired. Stamps/Challenges are now unblocked. | [done] | M (enabler) |
 | **Deploy dedup** | `deploy.sh`/`DEPLOY.md` duplicated across repos; prod IP hardcoded ~6 places. Handoff. | [ready] | S |
 | **Turnstile hostname auth** | Add `clubpenguinlive.net` / `play.*` to sitekey `0x4AAAAAADYRrvWND1L5qZvq` in the CF Turnstile dashboard (error 600010). Cosmetic; signup works via fail-open. `cpl-flags`. | [decision-needed] (your CF action) | XS |
-| **PWA install icons** | `/icons/icon-{180,192,512}` still the old penguin; needs a ≥512px source of the new icon. `cpl-flags`. | [decision-needed] (your asset) | XS |
+| **PWA install icons** | **Mostly done 2026-06-06.** Icons are the new CP-penguin (192/512/180 + favicon). iOS homescreen `apple-touch-icon` was only 180 (upscaled/soft on retina) → now the 512 source, and the `<link>` is cache-busted (`?v=`) like the favicon. Android manifest already has 512. Only residue: a bespoke maskable/adaptive icon if wanted. | [done-verify] | XS |
+| **iOS standalone safe-area** | **Done 2026-06-06.** Homescreen/standalone launch ("full-screen" on iOS) ran edge-to-edge under the notch/rounded corners/home indicator, clipping the canvas + bottom toolbar. Added `env(safe-area-inset-*)` padding to `#cpl-stage` (coarse-landscape) and `#game-wrap:fullscreen`; `env()` is 0 in a normal tab so desktop/in-browser is unchanged (verified PASS). | [done-verify] (eyeball on a notched iPhone) | S |
 | **Legacy Houdini repo** | `cpl-flags` says delete `clubpenguinlive/play.clubpenguinlive.net` (needs `gh auth refresh -s delete_repo`). **(unverified)** — confirm it still exists before acting. | [decision-needed] (your action) | XS |
 
 ---
