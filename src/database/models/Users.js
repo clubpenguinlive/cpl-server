@@ -171,6 +171,10 @@ export default class Users extends BaseModel {
             foreignKey: 'userId',
             as: 'userChallenges'
         })
+        this.hasMany(db.userStamps, {
+            foreignKey: 'userId',
+            as: 'userStamps'
+        })
     }
 
     get anonymous() {

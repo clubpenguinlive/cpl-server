@@ -1,0 +1,14 @@
+{
+    "1":  { "name": "Lucky Catch",     "group": "Activities",   "difficulty": 1, "member": 0 },
+    "2":  { "name": "Fish Expert",     "group": "Activities",   "difficulty": 2, "member": 0 },
+    "3":  { "name": "Bean Counter",    "group": "Activities",   "difficulty": 1, "member": 0 },
+    "4":  { "name": "Wave Rider",      "group": "Activities",   "difficulty": 1, "member": 0 },
+    "5":  { "name": "Soaring",         "group": "Activities",   "difficulty": 2, "member": 0 },
+    "6":  { "name": "Ice Carver",      "group": "Activities",   "difficulty": 2, "member": 0 },
+    "7":  { "name": "Cart Master",     "group": "Activities",   "difficulty": 3, "member": 0 },
+    "10": { "name": "Card-Jitsu Win",  "group": "Card-Jitsu",   "difficulty": 1, "member": 0 },
+    "11": { "name": "Black Belt",      "group": "Card-Jitsu",   "difficulty": 4, "member": 0 },
+    "20": { "name": "Recycler",        "group": "Eco",          "difficulty": 2, "member": 0 },
+    "30": { "name": "Lake Finder",     "group": "Exploration",  "difficulty": 1, "member": 0 },
+    "31": { "name": "Deep Diver",      "group": "Exploration",  "difficulty": 2, "member": 0 }
+}

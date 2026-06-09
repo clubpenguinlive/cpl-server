@@ -381,6 +381,16 @@ export default class CardInstance extends BaseInstance {
         if (won && user.challenges) {
             user.challenges.track('cardjitsu:wins', 1).catch(error => user.handler.error(error))
         }
+
+        // Stamps (server-decided): first Card-Jitsu win, and Black Belt at max ninja rank.
+        if (user.stamps) {
+            if (won) {
+                user.stamps.award(10).catch(error => user.handler.error(error))
+            }
+            if (user.ninjaRank >= 9) {
+                user.stamps.award(11).catch(error => user.handler.error(error))
+            }
+        }
     }
 
     checkNoBeltWin(user, won) {
