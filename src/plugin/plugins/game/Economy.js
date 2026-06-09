@@ -35,6 +35,12 @@ export default class Economy extends GamePlugin {
     }
 
     recycle(args, user) {
+        // Count every recycle (even past the coin cap) for the Recycler stamp (server-decided).
+        user.recycleCount = (user.recycleCount || 0) + 1
+        if (user.stamps && user.recycleCount >= 10) {
+            user.stamps.award(20).catch(error => this.handler.error(error))
+        }
+
         const earned = user.recycleEarned || 0
         if (earned >= RECYCLE_SESSION_CAP) {
             return

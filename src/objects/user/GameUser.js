@@ -14,6 +14,7 @@ import PostcardCollection from '@database/collections/PostcardCollection'
 import SkillCollection from '@database/collections/SkillCollection'
 import ResourceCollection from '@database/collections/ResourceCollection'
 import ChallengeCollection from '@database/collections/ChallengeCollection'
+import StampCollection from '@database/collections/StampCollection'
 
 import PurchaseValidator from './purchase/PurchaseValidator'
 
@@ -45,8 +46,9 @@ export default class GameUser extends User {
 
         this.walkingPet = null
 
-        // Per-session coins earned from recycling (Recycle Plant); capped server-side in Economy.recycle.
+        // Per-session recycling counters (Recycle Plant): earned coins (capped) + recycle count (stamp).
         this.recycleEarned = 0
+        this.recycleCount = 0
 
         this.validatePurchase = new PurchaseValidator(this)
 
@@ -102,6 +104,12 @@ export default class GameUser extends User {
         this.frame = 1
 
         this.room.add(this)
+
+        // First-visit discovery stamps (server-decided).
+        const ROOM_STAMPS = { 814: 30, 815: 31 }   // Hidden Lake, Underwater
+        if (this.stamps && ROOM_STAMPS[room.id]) {
+            this.stamps.award(ROOM_STAMPS[room.id]).catch(error => this.handler.error(error))
+        }
     }
 
     joinTable(table) {
@@ -276,6 +284,11 @@ export default class GameUser extends User {
                         where: { day: new Date().toISOString().slice(0, 10) },
                         required: false,
                         separate: true
+                    },
+                    {
+                        model: this.db.userStamps,
+                        as: 'userStamps',
+                        separate: true
                     }
                 ]
             })
@@ -297,6 +310,7 @@ export default class GameUser extends User {
             this.skills = new SkillCollection(this, user.userSkills)
             this.resources = new ResourceCollection(this, user.userResources)
             this.challenges = new ChallengeCollection(this, user.userChallenges || [])
+            this.stamps = new StampCollection(this, user.userStamps || [])
 
             this.setPermissions()
 

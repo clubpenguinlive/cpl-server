@@ -20,6 +20,17 @@ const DEFAULT_MAX_COINS = 800
 const XP_PER_COIN = 2
 const COINS_PER_RESOURCE = 20
 
+// Per-game stamp triggers (server-decided, fired in gameOver). `play` = earned on any completed game;
+// `score` = earned when the SERVER-validated (capped) score crosses a threshold. Stamp ids -> data/stamps.json.
+const GAME_STAMPS = {
+    904: { play: 1, score: { id: 2, min: 400 } },   // Ice Fishing  -> Lucky Catch / Fish Expert
+    901: { play: 3 },                                // Bean Counters-> Bean Counter
+    912: { play: 4 },                                // Catchin' Waves-> Wave Rider
+    906: { play: 5 },                                // Jet Pack     -> Soaring
+    909: { play: 6 },                                // Thin Ice     -> Ice Carver
+    905: { score: { id: 7, min: 400 } }              // Cart Surfer  -> Cart Master
+}
+
 
 export default class Minigame extends GamePlugin {
 
@@ -85,6 +96,17 @@ export default class Minigame extends GamePlugin {
             user.challenges.track(`game:${gameId}:plays`, 1).catch(error => this.handler.error(error))
             if (coins > 0) {
                 user.challenges.track('coins:earned', coins).catch(error => this.handler.error(error))
+            }
+        }
+
+        // Stamps (server-decided): a play stamp and/or a score stamp once the capped score crosses a threshold.
+        if (user.stamps && GAME_STAMPS[gameId]) {
+            const s = GAME_STAMPS[gameId]
+            if (s.play) {
+                user.stamps.award(s.play).catch(error => this.handler.error(error))
+            }
+            if (s.score && baseCoins >= s.score.min) {
+                user.stamps.award(s.score.id).catch(error => this.handler.error(error))
             }
         }
 
