@@ -5,7 +5,9 @@
 set -euo pipefail
 
 BRANCH=master
-PROD=nick@10.0.0.72
+# Single source for the prod address: the `cpl-prod` Host alias in ~/.ssh/config on dev-01
+# (HostName 10.0.0.72, User nick). Override per-run with CPL_PROD=user@host if ever needed.
+PROD="${CPL_PROD:-cpl-prod}"
 
 # Pre-flight: config/config.json (DB creds, crypto secret) is gitignored and NOT
 # shipped by git push; the server imports it at startup and the build copies it

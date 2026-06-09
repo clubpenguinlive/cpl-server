@@ -23,7 +23,17 @@ edit + commit + push   →   deploy to prod   →   build + restart   →   veri
 
 ## One-time setup (already done)
 
-- dev-01 has a `prod` git remote: `nick@10.0.0.72:/opt/yukon/server`
+- **`cpl-prod` is the single source for the prod address**, a Host alias in `~/.ssh/config` on
+  dev-01 (`HostName 10.0.0.72`, `User nick`). The deploy script, git remote, and these docs all
+  reference the alias; if prod's IP or user ever changes, edit only the ssh config. On a fresh
+  machine, recreate it:
+  ```
+  Host cpl-prod
+      HostName 10.0.0.72
+      User nick
+      IdentityFile ~/.ssh/id_ed25519
+  ```
+- dev-01 has a `prod` git remote: `cpl-prod:/opt/yukon/server`
 - prod has `git config receive.denyCurrentBranch updateInstead`
 - prod's GitHub (`cpl`) push URL is disabled
 
@@ -33,7 +43,7 @@ edit + commit + push   →   deploy to prod   →   build + restart   →   veri
 On a fresh target, create it once from the example and fill it in:
 
 ```bash
-ssh nick@10.0.0.72
+ssh cpl-prod
 cp /opt/yukon/server/config/config_example.json /opt/yukon/server/config/config.json
 # then edit config.json: real DB password, crypto.secret, etc.
 ```
@@ -55,7 +65,7 @@ which is:
 ```bash
 git push origin master      # publish to GitHub
 git push prod   master      # ship to prod (rejected if prod is dirty)
-ssh nick@10.0.0.72 'cd /opt/yukon/server && npm run build && npm run restart'
+ssh cpl-prod 'cd /opt/yukon/server && npm run build && npm run restart'
 ```
 
 `npm run build` runs babel `src -> dist`; `npm run restart` is `pm2 restart ecosystem.config.js`
@@ -67,7 +77,7 @@ ssh nick@10.0.0.72 'cd /opt/yukon/server && npm run build && npm run restart'
 ## Verify after deploy
 
 ```bash
-ssh nick@10.0.0.72 'pm2 list'          # Login + Blizzard online
+ssh cpl-prod 'pm2 list'          # Login + Blizzard online
 node <repo>/.local-scratch/verify_game.js   # from dev-01: both worlds connect, RESULT: PASS
 ```
 
@@ -75,5 +85,5 @@ node <repo>/.local-scratch/verify_game.js   # from dev-01: both worlds connect, 
 
 ```bash
 git push prod <previous-good-sha>:master --force-with-lease
-ssh nick@10.0.0.72 'cd /opt/yukon/server && npm run build && npm run restart'
+ssh cpl-prod 'cd /opt/yukon/server && npm run build && npm run restart'
 ```
