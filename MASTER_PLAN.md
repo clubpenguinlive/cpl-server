@@ -181,27 +181,26 @@ for unattended swap/nginx is still the optional next step but not required for n
 
 ---
 
-## 3. Mobile completion — Ruffle touch overlay for keyboard Flash games — **[watch-it-render]**
+## 3. Mobile completion — Ruffle touch overlay for keyboard Flash games — **[done-verify on device]**
 
-The **last real mobile-playability gap.** Native Sled (999) now has touch (§0). What remains: the
-classic CP **Flash** minigames are keyboard-designed and Ruffle does not synthesize touch→keyboard,
-so on a phone they have **no controls**.
+**BUILT + DEPLOYED** (found in the 2026-06-09 refresh; commit `89f42ff`, Jun 5, landed after this
+plan was first written — earlier drafts of this section claimed "no touch injection," stale).
+`engine/ruffle/TouchControls.js`: a shared fixed-position DOM D-pad + optional action button,
+mounted over the Ruffle player on coarse-pointer devices only, dispatching synthetic
+`KeyboardEvent`s (key/code + legacy keyCode/which) at the player element + its canvas.
+`RuffleController` mounts it in `bootGame` and destroys it on both teardown paths (held keys
+released so nothing sticks).
 
-**Games needing an overlay (keyboard-driven):** Cart Surfer (905), Jet Pack (906), Thin Ice (909),
-Aqua Grabber / Sub (916), Astro Barrier (900), Hydro Hopper (903), Puffle Roundup (902).
-**Already touch-fine (pointer/click):** Bean Counters (901), Ice Fishing (904), the native pointer
-games (Card-Jitsu, Sensei, Connect Four, Mancala). Catchin' Waves (912) and the per-game exact key
-map need a playtest pass to confirm (**unverified** per-game control set).
+**Mapped (6):** Astro Barrier (`astro`, L/R + FIRE), Cart Surfer (`mine`), Jet Pack (`jetpack`),
+Thin Ice (`thinice`), Catchin' Waves (`waves`, + TRICK), Aqua Grabber (`sub`, + GRAB).
+**Intentionally no overlay (pointer-driven):** Bean Counters, Ice Fishing, Puffle Roundup,
+Hydro Hopper, the native pointer games.
 
-**Approach:** an on-screen control overlay (a CP-style D-pad / buttons) that dispatches synthetic
-`KeyboardEvent('keydown'/'keyup', {key:'ArrowUp'…})` at the Ruffle player DOM element. The harness
-(`engine/ruffle/RuffleController.js`, `RuffleShim.js`; `RoomManager.addFlashGame→bootGame`) holds the
-player element after `ruffle.createPlayer()` and currently has **no** touch injection. Gate on
-`matchMedia('(pointer: coarse)')` exactly like Sled. **Why watch-it-render:** button placement and the
-per-game key mapping have to be eyeballed against each game live. **Effort:** ~100-150 LOC per game
-(shared overlay component + per-game mapping); a shared D-pad reduces marginal cost. **Risk:** low
-(standard DOM API; no Ruffle changes). Build incrementally, highest-traffic games first
-(Cart Surfer, Jet Pack, Thin Ice).
+**What remains — a real-device playtest only** (the file's own header: synthetic key injection
+into Ruffle cannot be proven headlessly): per game, does the D-pad drive it, is placement
+comfortable, and are Puffle Roundup / Hydro Hopper truly touch-fine without one. If a game ignores
+the keys, the documented fix is widening the dispatch targets in `_emit()` (e.g. `document`).
+Start with Cart Surfer, Jet Pack, Thin Ice.
 
 ---
 
@@ -258,8 +257,8 @@ Pizzatron (Cooking) is the obvious port per the fork audit.
 ### C. Watch-it-render (queue for a live session with you)
 1. **Verify the 06-08/09 cluster** (§0 second table) — Challenges claim, Recycling cap, a stamp
    earn, iPhone rotate/buffer, 1440p autofit. Cheapest wins; all already deployed.
-2. **Ruffle touch overlay** (§3) — the main remaining mobile gap; biggest single playability win,
-   build incrementally per game (Cart Surfer, Jet Pack, Thin Ice first).
+2. **Ruffle touch overlay device playtest** (§3) — already built + live; phone-test the 6 mapped
+   games (Cart Surfer, Jet Pack, Thin Ice first) and confirm the pointer games need none.
 3. **Internal-name leak fix** (§2.8), **Mine depth glitch** (§2.6), **Sensei real-match confirm**
    (§2.5) — cheap, but each wants eyes-on to verify the render.
 4. **Skills → player-card drawer** (§4) and **Tablet-nav anchoring** (§5).
