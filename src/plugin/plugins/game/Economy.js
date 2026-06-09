@@ -14,6 +14,14 @@ const RESOURCE_PRICES = {
     shell: 12    // Surfing (Catchin' Waves) - rarer
 }
 
+// Recycling (Recycle Plant, room 816): a low-effort passive earn, so it pays a small flat amount per
+// recycled eco-item, at/below the cheapest discrete payout in the game (Card-Jitsu's 5/loss), and is
+// hard-capped per session SERVER-SIDE. The cap is the anti-cheat: a hacked client spamming `recycle`
+// can mint at most RECYCLE_SESSION_CAP coins/session (well under a single minigame session ~800), so
+// recycling can never out-earn the games. Amounts are interim/tunable.
+const RECYCLE_REWARD = 3
+const RECYCLE_SESSION_CAP = 150
+
 export default class Economy extends GamePlugin {
 
     constructor(handler) {
@@ -21,8 +29,26 @@ export default class Economy extends GamePlugin {
 
         this.events = {
             'sell_resource': this.sellResource,
-            'get_resources': this.getResources
+            'get_resources': this.getResources,
+            'recycle': this.recycle
         }
+    }
+
+    recycle(args, user) {
+        const earned = user.recycleEarned || 0
+        if (earned >= RECYCLE_SESSION_CAP) {
+            return
+        }
+
+        const reward = Math.min(RECYCLE_REWARD, RECYCLE_SESSION_CAP - earned)
+        user.recycleEarned = earned + reward
+        user.updateCoins(reward)
+
+        user.send('recycle_reward', {
+            coins: reward,
+            total: user.coins,
+            capped: user.recycleEarned >= RECYCLE_SESSION_CAP
+        })
     }
 
     getResources(args, user) {
