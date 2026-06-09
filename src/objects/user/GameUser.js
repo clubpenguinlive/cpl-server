@@ -45,6 +45,9 @@ export default class GameUser extends User {
 
         this.walkingPet = null
 
+        // Per-session coins earned from recycling (Recycle Plant); capped server-side in Economy.recycle.
+        this.recycleEarned = 0
+
         this.validatePurchase = new PurchaseValidator(this)
 
         // Used for dynamic/temporary events
