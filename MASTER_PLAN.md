@@ -126,8 +126,11 @@ spawn coords to `Cave.js`; the Cave room id and its `cave-physics.json` zone nee
 **What:** Catalog rotation cadence for the Sport Shop / furniture catalogs is unset. The pattern
 exists and is proven (`DailyCatalog.js` weekly clothing rotation). **Blocking:** your cadence pick
 (weekly? monthly? which items rotate). **Effort:** S-M (reuse the DailyCatalog deterministic-seed
-pattern). **Risk:** low. **(unverified)** — I did not locate a Sport Shop catalog module this pass;
-confirm whether a furniture catalog exists yet or is net-new before scoping.
+pattern). **Risk:** low. **Verified 2026-06-09:** the furniture catalog EXISTS as a static UI
+(`interface/catalogs/furniture/FurnitureCatalog.js`, opened from IglooEdit, purchases via
+PurchaseValidator) — rotation would be additive. The Sport Shop's in-room catalog button exists but
+`Sport.js onCatalogClick()` is an **empty stub** — clicking does nothing today; wiring it is part
+of this item. `DailyCatalog` itself is clothing-only.
 
 ### 2.5 Sensei real-win verification — **[watch-it-render / done-verify]**
 **What:** The card payout is verified **by code path**: `CardInstance.js:378`
@@ -238,11 +241,11 @@ Pizzatron (Cooking) is the obvious port per the fork audit.
 | **Single credential source** | DB creds live in 4 hand-synced copies (server config.json, 2× PHP db-config, .my.cnf). One source the PHP + server both read. INFRA §5/§9. | [ready] | M |
 | **Off-prod / atomic builds** | Server `npm run build` does `rimraf dist` first → a failed build wipes `dist`, no rollback; client builds on prod too. Build-to-temp-then-swap. INFRA §9. | [ready] | M |
 | **Migration runner** | **DONE 2026-06-06.** `utils/migrate.js` + `migrations/` + `npm run migrate` (`--status`), tracked in `schema_migrations`. Proven twice on prod: `0001_user_challenges` (Challenges) and `0002_user_stamps` (Stamps), both applied + features shipped on top. | [done] | M (enabler) |
-| **Deploy dedup** | `deploy.sh`/`DEPLOY.md` duplicated across repos; prod IP hardcoded ~6 places. Handoff. | [ready] | S |
+| **Deploy dedup** | **DONE 2026-06-09.** The prod address now has ONE source: the `cpl-prod` Host alias in dev-01's `~/.ssh/config`. All three `deploy.sh` (`PROD="${CPL_PROD:-cpl-prod}"`), both `prod` git remotes, and both DEPLOY.md reference the alias (client `0a936bf`, server `c8819fb`, assets `bcc37dc`); full client deploy verified through it. IP change = edit the ssh config only. The per-repo pre-flights stay (they're repo-specific, not duplication). | [done] | S |
 | **Turnstile hostname auth** | Add `clubpenguinlive.net` / `play.*` to sitekey `0x4AAAAAADYRrvWND1L5qZvq` in the CF Turnstile dashboard (error 600010). Cosmetic; signup works via fail-open. `cpl-flags`. | [decision-needed] (your CF action) | XS |
 | **PWA install icons** | **Mostly done 2026-06-06.** Icons are the new CP-penguin (192/512/180 + favicon). iOS homescreen `apple-touch-icon` was only 180 (upscaled/soft on retina) → now the 512 source, and the `<link>` is cache-busted (`?v=`) like the favicon. Android manifest already has 512. Only residue: a bespoke maskable/adaptive icon if wanted. | [done-verify] | XS |
 | **iOS standalone safe-area** | **Done 2026-06-06.** Homescreen/standalone launch ("full-screen" on iOS) ran edge-to-edge under the notch/rounded corners/home indicator, clipping the canvas + bottom toolbar. Added `env(safe-area-inset-*)` padding to `#cpl-stage` (coarse-landscape) and `#game-wrap:fullscreen`; `env()` is 0 in a normal tab so desktop/in-browser is unchanged (verified PASS). | [done-verify] (eyeball on a notched iPhone) | S |
-| **Legacy Houdini repo** | `cpl-flags` says delete `clubpenguinlive/play.clubpenguinlive.net` (needs `gh auth refresh -s delete_repo`). **(unverified)** — confirm it still exists before acting. | [decision-needed] (your action) | XS |
+| **Legacy Houdini repo** | **RESOLVED — already gone.** Verified 2026-06-09: `gh repo view clubpenguinlive/play.clubpenguinlive.net` returns "could not resolve" (deleted at some point). Nothing to do. | [done] | — |
 
 ---
 
@@ -252,11 +255,12 @@ Pizzatron (Cooking) is the obvious port per the fork audit.
 1. **Event-room content calendar** (§4) and **Sport Shop cadence** (§2.4) — the mechanisms are
    ready/proven; both are gated only on which content and dates.
 2. **Stamps v2 scope** (§4): icon-art sourcing, then how far toward the ~700 Houdini defs.
-3. Quick chores only you can do: **Turnstile hostnames**, **CF Insights beacon** (§2.9),
-   **legacy repo delete** (§5).
+3. Quick chores only you can do: **Turnstile hostnames**, **CF Insights beacon** (§2.9).
+   (The legacy Houdini repo turned out already deleted.)
 
 ### B. Ready to build now (no decision needed)
-1. **Deploy dedup** (§5) — S, head-down. (The Cave-pond lake door shipped 2026-06-09, §2.3.)
+*(empty — every ready-now item has shipped: lake door, deploy dedup, migration runner, ops
+scripts, sledding row. The next builds are all gated on either your eyes or your decisions.)*
 
 ### C. Watch-it-render (queue for a live session with you)
 1. **Verify the 06-08/09 cluster** (§0 second table) — Challenges claim, Recycling cap, a stamp
