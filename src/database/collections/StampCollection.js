@@ -33,7 +33,7 @@ export default class StampCollection extends Collection {
             return false
         }
 
-        this.user.send('stamp_earned', { stamp: id })
+        this.user.send('stamp_earned', { stamp: id, name: stamps[id].name })
         return true
     }
 
