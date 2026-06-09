@@ -79,6 +79,15 @@ export default class Minigame extends GamePlugin {
 
         user.updateCoins(coins, true)
 
+        // Daily-challenge progress hooks the SAME server-validated points (a play, the awarded
+        // coins), so challenge progress is as un-fakeable as the coin payout itself.
+        if (user.challenges) {
+            user.challenges.track(`game:${gameId}:plays`, 1).catch(error => this.handler.error(error))
+            if (coins > 0) {
+                user.challenges.track('coins:earned', coins).catch(error => this.handler.error(error))
+            }
+        }
+
         // Skill XP + resource drops scale off the validated (pre-multiplier) coins.
         if (cfg.skill && baseCoins > 0) {
             let xp = Math.floor(baseCoins * XP_PER_COIN)
@@ -86,12 +95,20 @@ export default class Minigame extends GamePlugin {
                 .then(result => this.onSkillXp(user, result))
                 .catch(error => this.handler.error(error))
 
+            if (user.challenges) {
+                user.challenges.track(`skill:${cfg.skill}:xp`, xp).catch(error => this.handler.error(error))
+            }
+
             if (cfg.resource) {
                 // Level-gated gathering buff: higher skill = more resources per game (+2%/level), server-side.
                 const level = user.skills.getLevel(cfg.skill)
                 const dropBonus = 1 + Math.min(level, 99) * 0.02
                 let quantity = Math.max(1, Math.floor((baseCoins / COINS_PER_RESOURCE) * dropBonus))
                 user.resources.addQuantity(cfg.resource, quantity)
+
+                if (user.challenges) {
+                    user.challenges.track(`resource:${cfg.resource}:gathered`, quantity).catch(error => this.handler.error(error))
+                }
             }
         }
     }
