@@ -105,7 +105,12 @@ below the cheapest current per-action minigame earn: `RECYCLE_REWARD=3`/item,
 animation re-enabled on successful recycle. **[watch-it-render]** residue: eyeball the +3 float and
 the 150 cap in the Eco room live.
 
-### 2.3 Hidden Lake door on the Cave pond — **[ready]** (placement decided)
+### 2.3 Hidden Lake door on the Cave pond — **[done 2026-06-09]**
+**Shipped:** client `3e544ce` (`'lake': triggerRoom(814, 760, 500)` in Cave.js) + assets `00368de`
+(a `lake` walk-into body on the pond center, x 700-920 / y 660-800, in the cave-physics override —
+first non-customized-room file in the assets repo). Deployed + rebuilt; post-deploy harness PASS.
+**[watch-it-render]** residue: walk into the pond and confirm the entry feels placed right on the
+art. Original decision text kept below for reference.
 **What:** Decision is made — Hidden Lake (814) gets a canonical entrance on the **water/pond in the
 Cave**. **Read-only confirmation requested (done):** the Cave's right-side wooden gate (octopus sign)
 is the `zone` rectangle at **x≈1319** whose only action is `onZoneClick()` → `sendMove(1266,572)` — a
@@ -153,11 +158,12 @@ raw key shows. Mismatches: **Lighthouse**→strings use `light_*`; **HiddenLake*
 - `engine/network/plugins/plugins/Buddy.js:49` — buddy "find" popup `getString(key+'_find')`.
 - (Map hints in `Map.js` are hardcoded, not affected.)
 **Scope:** NOT systemic — it's the handful of recently-added rooms whose keys diverge from the
-classic string prefixes (Lighthouse, HiddenLake, HQ, Agent), not every room. **Recommended fix:** a
-small key→string-prefix lookup map consumed at both render sites (e.g. `{HiddenLake:'lake',
-Lighthouse:'light', HQ:'hq', Agent:'agent'}` + add the missing `hq_*` strings to crumbs). Cleaner and
-far less invasive than adding per-room display fields to every crumb entry. **Effort:** S. **Risk:**
-low; verify by watching the loading/buddy popups render the right names. **Do not fix yet** (watch-it-render).
+classic string prefixes (Lighthouse, HiddenLake, HQ, Agent), not every room.
+**DONE (found in the 2026-06-09 refresh):** shipped Jun 5 17:23 as `a76f9da` (client) + `8674dac`
+(assets) — exactly the recommended fix: `engine/world/room/roomStringKey.js` lookup map consumed at
+both render sites (Join loading screen + Buddy find popup), plus the missing `load_hq`/`hq_find`/
+`lake_find`/`agent_find`/Sensei strings in crumbs. This and the touch overlay (§3) came from the
+same unrecorded late-Jun-5 session. Residue: eyeball a loading screen + buddy-find popup once.
 
 ### 2.9 Marketing CSP + dependency scan — **[done-verify]** (already addressed)
 Live `clubpenguinlive.net` already serves a hardened CSP **with** `default-src 'self'` and **without**
@@ -250,17 +256,15 @@ Pizzatron (Cooking) is the obvious port per the fork audit.
    **legacy repo delete** (§5).
 
 ### B. Ready to build now (no decision needed)
-1. **Hidden Lake door on the Cave pond** (§2.3) — decided, confirmed non-conflicting, S. (Hidden
-   Lake is already reachable via the Forest door, so this is polish, not a gap.)
-2. **Deploy dedup** (§5) — S, head-down.
+1. **Deploy dedup** (§5) — S, head-down. (The Cave-pond lake door shipped 2026-06-09, §2.3.)
 
 ### C. Watch-it-render (queue for a live session with you)
 1. **Verify the 06-08/09 cluster** (§0 second table) — Challenges claim, Recycling cap, a stamp
    earn, iPhone rotate/buffer, 1440p autofit. Cheapest wins; all already deployed.
 2. **Ruffle touch overlay device playtest** (§3) — already built + live; phone-test the 6 mapped
    games (Cart Surfer, Jet Pack, Thin Ice first) and confirm the pointer games need none.
-3. **Internal-name leak fix** (§2.8), **Mine depth glitch** (§2.6), **Sensei real-match confirm**
-   (§2.5) — cheap, but each wants eyes-on to verify the render.
+3. **Mine depth glitch** (§2.6) and **Sensei real-match confirm** (§2.5) — cheap, eyes-on. The
+   internal-name leak (§2.8) turned out already fixed; just glance at a loading screen.
 4. **Skills → player-card drawer** (§4) and **Tablet-nav anchoring** (§5).
 
 ### D. Later / deep / blocked
