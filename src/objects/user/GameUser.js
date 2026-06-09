@@ -13,6 +13,7 @@ import PetCollection from '@database/collections/PetCollection'
 import PostcardCollection from '@database/collections/PostcardCollection'
 import SkillCollection from '@database/collections/SkillCollection'
 import ResourceCollection from '@database/collections/ResourceCollection'
+import ChallengeCollection from '@database/collections/ChallengeCollection'
 
 import PurchaseValidator from './purchase/PurchaseValidator'
 
@@ -264,6 +265,14 @@ export default class GameUser extends User {
                         model: this.db.userResources,
                         as: 'userResources',
                         separate: true
+                    },
+                    {
+                        // Only TODAY's daily-challenge progress (the day's SET is date-derived, not stored).
+                        model: this.db.userChallenges,
+                        as: 'userChallenges',
+                        where: { day: new Date().toISOString().slice(0, 10) },
+                        required: false,
+                        separate: true
                     }
                 ]
             })
@@ -284,6 +293,7 @@ export default class GameUser extends User {
             this.pets = new PetCollection(this, user.pets)
             this.skills = new SkillCollection(this, user.userSkills)
             this.resources = new ResourceCollection(this, user.userResources)
+            this.challenges = new ChallengeCollection(this, user.userChallenges || [])
 
             this.setPermissions()
 

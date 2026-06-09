@@ -376,6 +376,11 @@ export default class CardInstance extends BaseInstance {
         // fixed flat amount. Modest interim values matching Connect Four (win 10 / loss 5);
         // no skill mapping yet (reserved). Covers both PvP (998) and Sensei (951, via super).
         user.updateCoins(won ? 10 : 5, true)
+
+        // Daily-challenge progress: a server-judged Card-Jitsu win (covers PvP 998 + Sensei 951).
+        if (won && user.challenges) {
+            user.challenges.track('cardjitsu:wins', 1).catch(error => user.handler.error(error))
+        }
     }
 
     checkNoBeltWin(user, won) {

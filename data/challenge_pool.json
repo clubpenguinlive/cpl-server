@@ -1,0 +1,14 @@
+[
+    { "id": 1,  "text": "Catch 20 fish",                 "metric": "resource:fish:gathered",   "target": 20,  "reward": 100 },
+    { "id": 2,  "text": "Mine 15 ore",                    "metric": "resource:ore:gathered",    "target": 15,  "reward": 100 },
+    { "id": 3,  "text": "Collect 12 shells surfing",      "metric": "resource:shell:gathered",  "target": 12,  "reward": 100 },
+    { "id": 4,  "text": "Haul 20 cargo",                  "metric": "resource:cargo:gathered",  "target": 20,  "reward": 100 },
+    { "id": 5,  "text": "Earn 500 coins",                 "metric": "coins:earned",             "target": 500, "reward": 120 },
+    { "id": 6,  "text": "Win 3 Card-Jitsu matches",       "metric": "cardjitsu:wins",           "target": 3,   "reward": 120 },
+    { "id": 7,  "text": "Play Cart Surfer 4 times",       "metric": "game:905:plays",           "target": 4,   "reward": 80  },
+    { "id": 8,  "text": "Play Ice Fishing 4 times",       "metric": "game:904:plays",           "target": 4,   "reward": 80  },
+    { "id": 9,  "text": "Play Jet Pack Adventure 3 times","metric": "game:906:plays",           "target": 3,   "reward": 80  },
+    { "id": 10, "text": "Play Thin Ice 3 times",          "metric": "game:909:plays",           "target": 3,   "reward": 80  },
+    { "id": 11, "text": "Gain 600 Mining XP",             "metric": "skill:mining:xp",          "target": 600, "reward": 100 },
+    { "id": 12, "text": "Gain 600 Fishing XP",            "metric": "skill:fishing:xp",         "target": 600, "reward": 100 }
+]
