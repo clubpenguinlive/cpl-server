@@ -14,6 +14,18 @@ Tags per item: **[decision-needed]** (gated on Nick), **[ready]** (buildable now
 hardened the apex CSP, and converted the prod VM to Gen2/UEFI. See §0 second table. Ninja Hideout
 was investigated and is now **blocked**, not ready (§2.7).
 
+**Reconciled 2026-06-16** (pre-containerization): re-confirmed the five 06-08 ship items against
+git, all present and committed - Daily Challenges (server `e2459fe`, client `14c32f3`, assets
+`c2fdfe1`), Recycling-pays-coins (server `e4acdc7`, client `ee177b9`), Stamps v1 (server `fe7c9f2`
++ `a59e32b`, client `79adf45`, assets `f877b33`), Sledding 8th skill row + Stage costume/script
+buttons hidden (both in client `6351196`: `setVisible(false).disableInteractive()` on the two Stage
+buttons + the `sledding` SkillsWidget row). No code contradicts these. The only stale citation: the
+Stage hide is in `Stage.js` right after the button definitions (~line 240/330), not the `379-380`
+cited in §2.1. Containerization investigation + locked decisions live in the namespace-root docs
+`CONTAINERIZATION-INVESTIGATION.md` and `CONTAINERIZATION-DECISIONS.md` (not duplicated here). Two
+canonical-record corrections this pass: the **PHP-FPM layer** is now documented in §1 as
+first-class, and the **Resend key git-history leak** is recorded in §5 (now RESOLVED - rotated 2026-06-16, old key revoked).
+
 ---
 
 ## 0. Read this first — items already done that were listed as pending
@@ -80,7 +92,11 @@ Club Penguin Live is **launched, public, and playable end to end**. Two decouple
 (INFRA §1): the apex `clubpenguinlive.net` marketing landing (Cloudflare Workers static site, up
 independent of home) and `play.clubpenguinlive.net` (the Yukon game on the on-prem VM via an
 outbound Cloudflare Tunnel). The game runs nginx → static `client/dist` + pm2 `Login`/`Blizzard`
-World servers → MariaDB. **Live now:** 38 walkable rooms (classic-island coverage); 24 game rooms
+World servers → MariaDB, **plus a PHP-FPM 8.3 layer** that owns the account flows: nginx routes
+`^/(create|account)/.*\.php$` to `php-fpm` over `/run/php/php8.3-fpm.sock`, and the PHP
+(`create.php`/`account.php` → `Database.php`) talks to MariaDB **directly** with its own DB
+credentials (its own `db-config.php`), separate from the node server. PHP-FPM is a first-class part
+of the stack, not an afterthought (verified 2026-06-16). **Live now:** 38 walkable rooms (classic-island coverage); 24 game rooms
 (3 native Phaser — Card-Jitsu 998, Sensei 951, Sled 999 — the rest classic CP Flash SWFs via the
 self-hosted Ruffle harness); the Tier-5 gathering economy (Fishing/Mining/Surfing/Hauling
 minigames → server-capped coins + skill XP + resources → Skills panel + sell-for-coins trade-in);
@@ -222,7 +238,7 @@ Skills panel → sell). What's left of T5 and the four greenlit specs:
 |---|---|---|---|---|
 | **Stamps** | CP stamp book; server-authoritative award, mirrors UserSkills | `SPEC_stamps.md` (full) | L | **[done 2026-06-08]** — server `fe7c9f2`+`a59e32b`, client `79adf45` (StampBook B / StampPopup), assets `f877b33`, migration `0002` applied. **v1 = curated 12 earnable stamps, name-based.** Remaining: icon-art sourcing pass, then expand defs toward ~700 (Houdini `stamps.sql`) — both **[decision-needed]** (scope/art). |
 | **Daily challenges** | 3 deterministic daily goals (date-seeded like DailyCatalog) + per-user progress + claim | `SPEC_daily_challenges.md` (full) | M | **[done 2026-06-08]** — server `e2459fe`, client `14c32f3` (panel, J key), assets `c2fdfe1`, migration `0001` applied. Rewards 80-120, claim server-validated. **[watch-it-render]** residue: one end-to-end claim with eyes on. |
-| **Skills → player-card drawer** | Move Skills into an Items\|Skills tab on the player card | `SPEC_skills_card_drawer.md` (full) | M | **[watch-it-render]** — spec explicitly reserves this for a live layout session (narrow-drawer relayout). Side-fix sledding 8th row: **done** (`6351196`). |
+| **Skills → player-card drawer** | Move Skills into an Items\|Skills tab on the player card | `SPEC_skills_card_drawer.md` (full) | M | **[cut 2026-06-16]** — removed from the active roadmap. The standalone `SkillsWidget` already delivers the full Skills view (8 rows + trade-in), so the card-drawer duplicate is redundant for now. Spec retained at namespace root as a parked idea; revisit only if the card-integrated UX is specifically wanted. Side-fix sledding 8th row already shipped (`6351196`). |
 | **Event / party rooms** | Date-driven room re-skins (spooky/winter) from native variant packs | `SPEC_event_rooms.md` (full) | M | **Mechanism: [ready]** (`activeVariant` helper + Join payload + client pack-swap, no DB); **content calendar: [decision-needed]** (which events/dates). Re-skins bulk-pullable; structural variants individual-port. |
 
 Stamps and Challenges shipped 2026-06-08; their spec headers still say "greenlight-pending, not
@@ -238,7 +254,8 @@ Pizzatron (Cooking) is the obvious port per the fork audit.
 |---|---|---|---|
 | **Atlas-defer (pre-login boot ~7.8MB)** | `mail` (2.46MB) + `iglooedit` (465KB) eagerly in `preload-pack.json`. Deferring is a real engine refactor (persistent sleep/wake scenes), not a config tweak. INFRA §9. | [decision-needed] (scope) / deep | L |
 | **Tablet-nav anchoring** | Mobile float-nav is keyed to in-canvas HUD pixel coords + a width-only 700px breakpoint; fragile on ~1.5-1.6 aspect tablets (flagged by code-review). | [watch-it-render] | S-M |
-| **Single credential source** | DB creds live in 4 hand-synced copies (server config.json, 2× PHP db-config, .my.cnf). One source the PHP + server both read. INFRA §5/§9. | [ready] | M |
+| **Single credential source** | DB creds live in **4** hand-synced copies, re-confirmed 2026-06-16: (1) `server/config/config.json`, (2) `client/create/scripts/php/db-config.php`, (3) `client/account/scripts/php/db-config.php`, (4) `/opt/backups/.my.cnf`. The 2026-06-05 rotation moved the PHP copies to gitignored `db-config.php` but did **not** consolidate the count. Folding into one source is **in-scope for the containerization migration** (single `.env`), not done. INFRA §5/§9. | [ready] / containerization | M |
+| **Resend SMTP key (git-history leak)** | **RESOLVED 2026-06-16.** Rotated out of band: a new sending-scoped key was issued, the old key revoked, and prod `config.json` updated. The old key in the server repo's pre-rename history (`config/config.json.bak-pre-rename` at `9c3c14a`/`b5daeac`, not at HEAD) is now dead. The key moves from prod `config.json` into the gitignored stack `.env` at containerization (decision 8). No action remaining; do not re-raise. | [done] | - |
 | **Off-prod / atomic builds** | Server `npm run build` does `rimraf dist` first → a failed build wipes `dist`, no rollback; client builds on prod too. Build-to-temp-then-swap. INFRA §9. | [ready] | M |
 | **Migration runner** | **DONE 2026-06-06.** `utils/migrate.js` + `migrations/` + `npm run migrate` (`--status`), tracked in `schema_migrations`. Proven twice on prod: `0001_user_challenges` (Challenges) and `0002_user_stamps` (Stamps), both applied + features shipped on top. | [done] | M (enabler) |
 | **Deploy dedup** | **DONE 2026-06-09.** The prod address now has ONE source: the `cpl-prod` Host alias in dev-01's `~/.ssh/config`. All three `deploy.sh` (`PROD="${CPL_PROD:-cpl-prod}"`), both `prod` git remotes, and both DEPLOY.md reference the alias (client `0a936bf`, server `c8819fb`, assets `bcc37dc`); full client deploy verified through it. IP change = edit the ssh config only. The per-repo pre-flights stay (they're repo-specific, not duplication). | [done] | S |
@@ -269,7 +286,7 @@ scripts, sledding row. The next builds are all gated on either your eyes or your
    games (Cart Surfer, Jet Pack, Thin Ice first) and confirm the pointer games need none.
 3. **Mine depth glitch** (§2.6) and **Sensei real-match confirm** (§2.5) — cheap, eyes-on. The
    internal-name leak (§2.8) turned out already fixed; just glance at a loading screen.
-4. **Skills → player-card drawer** (§4) and **Tablet-nav anchoring** (§5).
+4. **Tablet-nav anchoring** (§5). (The Skills → player-card drawer was **cut 2026-06-16**, §4 — SkillsWidget already covers it.)
 
 ### D. Later / deep / blocked
 1. **Atlas-defer 7.8MB boot refactor** (§5) — real engine work; highest infra payoff but largest risk.
