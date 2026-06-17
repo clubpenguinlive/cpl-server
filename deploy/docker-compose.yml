@@ -1,0 +1,110 @@
+# CPL production stack. One Compose project on the dockerized host (cpl-01).
+# Images are promoted by tag from ghcr (decision 3/4); this file pulls, it does not build.
+# The DB volume is sacred (decision 9): every deploy recreates app images only, never `down -v`.
+name: cpl
+
+x-server-image: &server-image ${REGISTRY:-ghcr.io/clubpenguinlive}/cpl-server:${IMAGE_TAG:-stable}
+x-db-env: &db-env
+  DB_HOST: mariadb
+  DB_USER: ${DB_USER:-yukon}
+  DB_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+  DB_NAME: ${DB_NAME:-clubpenguinlive}
+
+services:
+  mariadb:
+    image: mariadb:10.11
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?set DB_ROOT_PASSWORD in .env}
+      MARIADB_DATABASE: ${DB_NAME:-clubpenguinlive}
+      MARIADB_USER: ${DB_USER:-yukon}
+      MARIADB_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_general_ci"]
+    volumes:
+      - mariadb-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+    networks: [cpl]
+
+  # One-shot: applies idempotent migrations before the worlds start, then exits (SWG-style).
+  cpl-migrate:
+    image: *server-image
+    restart: "no"
+    environment:
+      <<: *db-env
+      MODE: migrate
+      CRYPTO_SECRET: ${CRYPTO_SECRET}
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    networks: [cpl]
+
+  cpl-login:
+    image: *server-image
+    restart: unless-stopped
+    environment:
+      <<: *db-env
+      WORLD: Login
+      CRYPTO_SECRET: ${CRYPTO_SECRET}
+      CORS_ORIGIN: ${CORS_ORIGIN:-https://play.clubpenguinlive.net}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+      EMAIL_FORCE_VERIFICATION: ${EMAIL_FORCE_VERIFICATION:-false}
+      EMAIL_SKIP_FOR: ${EMAIL_SKIP_FOR:-[]}
+    depends_on:
+      cpl-migrate:
+        condition: service_completed_successfully
+    networks: [cpl]
+
+  cpl-blizzard:
+    image: *server-image
+    restart: unless-stopped
+    environment:
+      <<: *db-env
+      WORLD: Blizzard
+      CRYPTO_SECRET: ${CRYPTO_SECRET}
+      CORS_ORIGIN: ${CORS_ORIGIN:-https://play.clubpenguinlive.net}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+      EMAIL_FORCE_VERIFICATION: ${EMAIL_FORCE_VERIFICATION:-false}
+      EMAIL_SKIP_FOR: ${EMAIL_SKIP_FOR:-[]}
+      BLIZZARD_MAX_USERS: ${BLIZZARD_MAX_USERS:-300}
+    depends_on:
+      cpl-migrate:
+        condition: service_completed_successfully
+    networks: [cpl]
+
+  cpl-php:
+    image: ${REGISTRY:-ghcr.io/clubpenguinlive}/cpl-php:${IMAGE_TAG:-stable}
+    restart: unless-stopped
+    environment:
+      <<: *db-env
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    networks: [cpl]
+
+  cpl-web:
+    image: ${REGISTRY:-ghcr.io/clubpenguinlive}/cpl-web:${IMAGE_TAG:-stable}
+    restart: unless-stopped
+    # No host ports published: cloudflared reaches nginx over the compose network (ingress -> http://cpl-web:80).
+    depends_on: [cpl-login, cpl-blizzard, cpl-php]
+    networks: [cpl]
+
+  cloudflared:
+    image: cloudflare/cloudflared:2026.5.2
+    restart: unless-stopped
+    command: ["tunnel", "--no-autoupdate", "run", "--token", "${TUNNEL_TOKEN:?set TUNNEL_TOKEN in .env}"]
+    depends_on: [cpl-web]
+    networks: [cpl]
+
+volumes:
+  mariadb-data:
+    external: true          # created at provisioning; never recreated by compose (decision 9)
+
+networks:
+  cpl:
+    driver: bridge
