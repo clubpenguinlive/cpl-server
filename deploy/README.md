@@ -38,6 +38,26 @@ credential: the builder SSHes in and the host pulls during the run (decision 3).
 5. Keep the old prod VM parked as rollback; reclaim it after a stable window; turn `swgr-linux-runner`
    back on.
 
+## Post-deploy smoke check (mandatory after any server deploy)
+
+After every `bash deploy.sh` that touches the server image (GameUser.load path, Clubs, auth, DB schema):
+
+```bash
+# Requires SSH tunnel to be up:
+ssh -L 18081:172.18.0.5:80 -N -f cpl-prod
+# Then from dev-01:
+node .local-scratch/smoke_login.js
+```
+
+Expected output ends with: `PASS  Login recovery confirmed. getUserClub path is working.`
+
+If it fails, roll back before the next deploy. The tunnel port (18081) and nginx container IP
+(172.18.0.5) may change after a `docker compose down/up`; re-check with:
+`ssh cpl-prod "docker inspect cpl-cpl-web-1 --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'"`
+
+This check is critical because a Sequelize association alias mismatch (e.g., `as: 'club'` vs `as: 'Club'`)
+silently deploys then crashes every login with a SequelizeEagerLoadingError. Smoke test catches it.
+
 ## Open sourcing caveats (verify before the first build)
 - **piefruit base:** `deploy.sh` needs a local piefruit checkout (`PIEFRUIT_DIR`, pinned `9e6a576d`).
   It is on prod at `/opt/yukon/piefruit-assets`; the builder needs its own copy (clone once, or rsync

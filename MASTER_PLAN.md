@@ -9,6 +9,8 @@ Companion to `INFRA.md` (how it's wired); this doc is the backlog (what's left).
 Tags per item: **[decision-needed]** (gated on Nick), **[ready]** (buildable now, no decision),
 **[watch-it-render]** (must be eyeballed live), **[done-verify]** (already done; just confirm).
 
+**Reconciled 2026-06-19** (backlog sync): server#12 (mascot visits) reopened — confirmed not built. website#4+#5 (news + SEO) closed — shipped a9c6acb. server#5 (Stamps 100+) remains closed — 115 IDs already in data/stamps.json, scope folded into server#3. New issues filed: server#13 (Ninja Hideout, blocked), client#8 (Ruffle touch playtest, watch-it-render), server#14 (off-prod atomic builds, ready), website#8 (CF Insights beacon, decision-needed). Code verification confirmed built but previously unrecorded: puffles v1 (server#4 + client#5, Pet.js full ownership/care; closed correctly), leaderboard UI (client#6, LeaderboardPanel 6 tabs; closed correctly), Cooking/Pizzatron (server#8, MiniGame.js game 910 + skill:'cooking'; closed correctly), Performing/Stage (server#9, Performing.js perform_act 15XP/act; closed correctly). The §4 claim "Cooking/Performing have UI but no game" is stale — both are built. MASTER_PLAN updated to reflect. Login smoke harness at .local-scratch/smoke_login.js; run after every server deploy.
+
 **Refreshed 2026-06-09** against shipped code: the 06-08/09 session closed both room decisions
 (Stage, Recycling), shipped Daily Challenges and Stamps v1 end to end, fixed the sledding row,
 hardened the apex CSP, and converted the prod VM to Gen2/UEFI. See §0 second table. Ninja Hideout
@@ -190,7 +192,7 @@ reaching the win branch end-to-end (does `won=true` fire and pay 10 on a real Se
 depth-sort or ambient-sprite layering bug. **Blocking:** your screenshot to pin which prop's depth is
 wrong. **Effort:** S once located (adjust the `this.sort` order in the Mine scene). **Risk:** low.
 
-### 2.7 Ninja Hideout room — **[blocked]** (investigated 2026-06-08, was wrongly "[ready]")
+### 2.7 Ninja Hideout room — **[blocked]** — server#13 (investigated 2026-06-08, was wrongly "[ready]")
 **Correction to this plan:** the 06-08 investigation found **no `hideout` scene exists in
 CPJourney-2/assets** (the native-port recipe has no source), and **Card-Jitsu Fire/Water don't
 exist** in any of the forks — so a Hideout today would be an empty placeholder room with nothing to
@@ -273,9 +275,11 @@ Skills panel → sell). What's left of T5 and the four greenlit specs:
 | **Clubs (Clans)** | In-game groups: create (500 coins), join, leave, leaderboard; 1% passive XP pool from coin earnings; [TAG] nametag display in chat | server#10 / client#7 | M | **[done 2026-06-19]** — server `2e9c9d1` (Club plugin, Clubs/ClubMembers models, migration `0004_clubs.sql`), client `8b77b19` (ClubsPanel N key + purple icon, PenguinLoader nametag tag, Club network plugin), assets `2c3e802` (crumbs). Tables live on prod: `clubs` + `club_members`. |
 
 Stamps and Challenges shipped 2026-06-08; their spec headers still say "greenlight-pending, not
-built" — stale, treat the code as authoritative. Also outstanding within T5: **Cooking /
-Performing / Agent** skills have UI but **no game** yet (they'd be coin-multipliers, no resource) —
-Pizzatron (Cooking) is the obvious port per the fork audit.
+built" — stale, treat the code as authoritative. **Cooking (server#8) and Performing (server#9) are
+also built:** `MiniGame.js` maps Pizzatron (game 910) to `skill: 'cooking'`, `resource: 'pizza'`;
+`Performing.js` handles `perform_act` awarding 15 XP/act (Stage play-through). Both issues closed.
+**Agent** skill remains UI-only (no game). Puffles v1 (server#4 + client#5) and Leaderboard UI
+(client#6) are also built and closed — all three were filed and confirmed in the 2026-06-19 audit.
 
 ---
 
@@ -287,10 +291,11 @@ Pizzatron (Cooking) is the obvious port per the fork audit.
 | **Tablet-nav anchoring** | Mobile float-nav is keyed to in-canvas HUD pixel coords + a width-only 700px breakpoint; fragile on ~1.5-1.6 aspect tablets (flagged by code-review). | [watch-it-render] | S-M |
 | **Single credential source** | **RESOLVED 2026-06-17** via containerization. DB creds now live in one prod `.env` on the Docker host. The Node entrypoint reads `DB_*` env vars directly; the PHP entrypoint renders `db-config.php` from the same vars at startup. The old `server/config/config.json` and PHP `db-config.php` files are no longer present on the prod host. Only outlier: the nightly `mysqldump` backup still uses a `.my.cnf` on the host (or inside the mariadb container) for credentials; consolidate that into the `.env`-driven entrypoint pattern if desired. | [done / minor outlier] | - |
 | **Resend SMTP key (git-history leak)** | **RESOLVED 2026-06-16.** Rotated out of band: a new sending-scoped key was issued, the old key revoked, and prod `config.json` updated. The old key in the server repo's pre-rename history (`config/config.json.bak-pre-rename` at `9c3c14a`/`b5daeac`, not at HEAD) is now dead. The key moves from prod `config.json` into the gitignored stack `.env` at containerization (decision 8). No action remaining; do not re-raise. | [done] | - |
-| **Off-prod / atomic builds** | Server `npm run build` does `rimraf dist` first → a failed build wipes `dist`, no rollback; client builds on prod too. Build-to-temp-then-swap. INFRA §9. | [ready] | M |
+| **Off-prod / atomic builds** — server#14 | Server `npm run build` does `rimraf dist` first → a failed build wipes `dist`, no rollback; client builds on prod too. Build-to-temp-then-swap. INFRA §9. | [ready] | M |
 | **Migration runner** | **DONE 2026-06-06.** `utils/migrate.js` + `migrations/` + `npm run migrate` (`--status`), tracked in `schema_migrations`. Proven twice on prod: `0001_user_challenges` (Challenges) and `0002_user_stamps` (Stamps), both applied + features shipped on top. | [done] | M (enabler) |
 | **Deploy dedup** | **DONE 2026-06-09.** The prod address now has ONE source: the `cpl-prod` Host alias in dev-01's `~/.ssh/config`. All three `deploy.sh` (`PROD="${CPL_PROD:-cpl-prod}"`), both `prod` git remotes, and both DEPLOY.md reference the alias (client `0a936bf`, server `c8819fb`, assets `bcc37dc`); full client deploy verified through it. IP change = edit the ssh config only. The per-repo pre-flights stay (they're repo-specific, not duplication). | [done] | S |
-| **Turnstile hostname auth** | Add `clubpenguinlive.net` / `play.*` to sitekey `0x4AAAAAADYRrvWND1L5qZvq` in the CF Turnstile dashboard (error 600010). Cosmetic; signup works via fail-open. `cpl-flags`. | [decision-needed] (your CF action) | XS |
+| **Turnstile hostname auth** — website#2 | Add `clubpenguinlive.net` / `play.*` to sitekey `0x4AAAAAADYRrvWND1L5qZvq` in the CF Turnstile dashboard (error 600010). Cosmetic; signup works via fail-open. `cpl-flags`. | [decision-needed] (your CF action) | XS |
+| **CF Insights beacon** — website#8 | \`script-src 'self'\` blocks CF Web Analytics beacon from `static.cloudflareinsights.com`. Allow it or disable CF Web Analytics in the dashboard. Pre-existing, cosmetic. | [decision-needed] | XS |
 | **PWA install icons** | **Mostly done 2026-06-06.** Icons are the new CP-penguin (192/512/180 + favicon). iOS homescreen `apple-touch-icon` was only 180 (upscaled/soft on retina) → now the 512 source, and the `<link>` is cache-busted (`?v=`) like the favicon. Android manifest already has 512. Only residue: a bespoke maskable/adaptive icon if wanted. | [done-verify] | XS |
 | **iOS standalone safe-area** | **Done 2026-06-06.** Homescreen/standalone launch ("full-screen" on iOS) ran edge-to-edge under the notch/rounded corners/home indicator, clipping the canvas + bottom toolbar. Added `env(safe-area-inset-*)` padding to `#cpl-stage` (coarse-landscape) and `#game-wrap:fullscreen`; `env()` is 0 in a normal tab so desktop/in-browser is unchanged (verified PASS). | [done-verify] (eyeball on a notched iPhone) | S |
 | **Legacy Houdini repo** | **RESOLVED — already gone.** Verified 2026-06-09: `gh repo view clubpenguinlive/play.clubpenguinlive.net` returns "could not resolve" (deleted at some point). Nothing to do. | [done] | — |
@@ -313,7 +318,7 @@ sledding row, containerization. The next builds are all gated on either your eye
 ### C. Watch-it-render (queue for a live session with you)
 1. **Mine depth glitch** (§2.6) and **Sensei real-match confirm** (§2.5) — screenshot captured
    (harness), needs your visual check on the mine layering. Sensei still needs a live playtest.
-2. **Ruffle touch overlay device playtest** (§3) — built + live; real phone required. Start with
+2. **Ruffle touch overlay device playtest** (§3) — client#8 — built + live; real phone required. Start with
    Cart Surfer, Jet Pack, Thin Ice.
 3. **iPhone rotate + 1440p autofit** and **tablet-nav anchoring** (§5) — eyeball sessions.
 4. **A stamp earn visible in the UI** (visit Hidden Lake or another stamp trigger; stamp_earned event
@@ -323,8 +328,9 @@ sledding row, containerization. The next builds are all gated on either your eye
 ### D. Later / deep / blocked
 1. **Atlas-defer 7.8MB boot refactor** (§5) — real engine work; highest infra payoff but largest risk.
 2. **Off-prod atomic builds**, **single credential source** (§5) — hardening, no urgency.
-3. **Ninja Hideout** (§2.7) — blocked behind Card-Jitsu Fire/Water; each of those is a large game
+3. **Ninja Hideout** — server#13 — blocked behind Card-Jitsu Fire/Water; each of those is a large game
    build (the real unlock if Card-Jitsu depth is wanted).
+4. **Mascot visits** — server#12 — scheduled NPC mascot appearances (Rockhopper, Aunt Arctic, etc.). Not built; no scheduling or NPC spawn system exists.
 
 **Why this order:** the old keystones (room decisions, migration runner, Challenges, Stamps) all
 shipped 2026-06-06→09, so the backlog is now verification + content decisions + the touch overlay.
