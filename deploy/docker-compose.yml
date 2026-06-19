@@ -82,7 +82,7 @@ services:
     restart: unless-stopped
     environment:
       <<: *db-env
-      WORLD: Blizzard2
+      WORLD: Iceberg
       CRYPTO_SECRET: ${CRYPTO_SECRET}
       CORS_ORIGIN: ${CORS_ORIGIN:-https://play.clubpenguinlive.net}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
