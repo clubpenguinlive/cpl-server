@@ -77,6 +77,24 @@ services:
         condition: service_completed_successfully
     networks: [cpl]
 
+  cpl-blizzard2:
+    image: *server-image
+    restart: unless-stopped
+    environment:
+      <<: *db-env
+      WORLD: Blizzard2
+      CRYPTO_SECRET: ${CRYPTO_SECRET}
+      CORS_ORIGIN: ${CORS_ORIGIN:-https://play.clubpenguinlive.net}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+      EMAIL_FORCE_VERIFICATION: ${EMAIL_FORCE_VERIFICATION:-false}
+      EMAIL_SKIP_FOR: ${EMAIL_SKIP_FOR:-[]}
+      BLIZZARD2_MAX_USERS: ${BLIZZARD2_MAX_USERS:-300}
+    depends_on:
+      cpl-migrate:
+        condition: service_completed_successfully
+    networks: [cpl]
+
   cpl-php:
     image: ${REGISTRY:-ghcr.io/clubpenguinlive}/cpl-php:${IMAGE_TAG:-stable}
     restart: unless-stopped
@@ -91,7 +109,7 @@ services:
     image: ${REGISTRY:-ghcr.io/clubpenguinlive}/cpl-web:${IMAGE_TAG:-stable}
     restart: unless-stopped
     # No host ports published: cloudflared reaches nginx over the compose network (ingress -> http://cpl-web:80).
-    depends_on: [cpl-login, cpl-blizzard, cpl-php]
+    depends_on: [cpl-login, cpl-blizzard, cpl-blizzard2, cpl-php]
     networks: [cpl]
 
   cloudflared:

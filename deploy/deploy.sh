@@ -21,7 +21,7 @@ REGISTRY="${REGISTRY:-ghcr.io/clubpenguinlive}"
 TAG="${TAG:-$(date +%Y%m%d)-$(git -C "$SERVER" rev-parse --short HEAD 2>/dev/null || echo manual)}"
 PIEFRUIT_DIR="${PIEFRUIT_DIR:?set PIEFRUIT_DIR to a piefruit assets checkout (pinned $PIEFRUIT_REF)}"
 PIEFRUIT_REF="${PIEFRUIT_REF:-9e6a576d}"
-DEPLOY_HOST="${DEPLOY_HOST:-cpl-01}"
+DEPLOY_HOST="${DEPLOY_HOST:-cpl-prod}"
 
 echo "==> [1/4] cpl-assets-base (piefruit @ $PIEFRUIT_REF + CPL overlay)"
 STAGE="$(mktemp -d)"
@@ -60,7 +60,7 @@ fi
 
 if [ "${DEPLOY:-0}" = "1" ]; then
   echo "==> deploying tag $TAG to $DEPLOY_HOST (app images only; DB volume untouched)"
-  ssh "$DEPLOY_HOST" "cd /opt/cpl && IMAGE_TAG='$TAG' docker compose pull && IMAGE_TAG='$TAG' docker compose up -d --remove-orphans"
+  ssh "$DEPLOY_HOST" "cd ~/cpl/server-clubpenguinlive/deploy && IMAGE_TAG='$TAG' docker compose pull && IMAGE_TAG='$TAG' docker compose up -d --remove-orphans"
 fi
 
 echo "done. tag = $TAG"
