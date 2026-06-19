@@ -46,6 +46,9 @@ export default class GameUser extends User {
 
         this.walkingPet = null
 
+        // Club membership: { id, name, tag, xp, role } or null (set in load())
+        this.club = null
+
         // Per-session recycling counters (Recycle Plant): earned coins (capped) + recycle count (stamp).
         this.recycleEarned = 0
         this.recycleCount = 0
@@ -170,17 +173,23 @@ export default class GameUser extends User {
         this.buddyRequests = this.buddyRequests.filter(request => request != id)
     }
 
-    updateCoins(coins, gameOver = false) {
-        coins = parseInt(coins)
+    updateCoins(delta, gameOver = false) {
+        const earned = parseInt(delta)
 
-        if (!isNaN(coins)) {
-            coins = Math.max(Math.min(1000000000, this.coins + coins), 0)
+        if (!isNaN(earned)) {
+            const newTotal = Math.max(Math.min(1000000000, this.coins + earned), 0)
+            this.update({ coins: newTotal })
 
-            this.update({ coins: coins })
+            // Contribute 1% of positive earnings to club XP (passive, no drain on personal coins)
+            if (earned > 0 && this.club) {
+                const xpGain = Math.max(1, Math.floor(earned * 0.01))
+                this.db.clubs.increment('xp', { by: xpGain, where: { id: this.club.id } })
+                this.club.xp += xpGain
+            }
         }
 
         if (gameOver) {
-            this.send('game_over', { coins: coins || this.coins })
+            this.send('game_over', { coins: this.coins })
         }
     }
 
@@ -344,6 +353,8 @@ export default class GameUser extends User {
             this.challenges = new ChallengeCollection(this, user.userChallenges || [])
             this.stamps = new StampCollection(this, user.userStamps || [])
 
+            this.club = await this.db.getUserClub(this.id)
+
             this.setPermissions()
 
             return true
@@ -356,23 +367,26 @@ export default class GameUser extends User {
     }
 
     toJSON() {
-        return pick(this,
-            'id',
-            'username',
-            'joinTime',
-            'head',
-            'face',
-            'neck',
-            'body',
-            'hand',
-            'feet',
-            'color',
-            'photo',
-            'flag',
-            'x',
-            'y',
-            'frame'
-        )
+        return {
+            ...pick(this,
+                'id',
+                'username',
+                'joinTime',
+                'head',
+                'face',
+                'neck',
+                'body',
+                'hand',
+                'feet',
+                'color',
+                'photo',
+                'flag',
+                'x',
+                'y',
+                'frame'
+            ),
+            club: this.club ? { tag: this.club.tag, name: this.club.name } : null
+        }
     }
 
 }

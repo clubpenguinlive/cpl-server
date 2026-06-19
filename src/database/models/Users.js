@@ -175,6 +175,10 @@ export default class Users extends BaseModel {
             foreignKey: 'userId',
             as: 'userStamps'
         })
+        this.hasOne(db.clubMembers, {
+            foreignKey: 'userId',
+            as: 'clubMember'
+        })
     }
 
     get anonymous() {
