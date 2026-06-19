@@ -35,7 +35,7 @@ export default class ClubMembers extends BaseModel {
     }
 
     static associate({ clubs, users }) {
-        this.belongsTo(clubs, { foreignKey: 'clubId' })
+        this.belongsTo(clubs, { foreignKey: 'clubId', as: 'club' })
         this.belongsTo(users, { foreignKey: 'userId', as: 'user' })
     }
 
