@@ -105,10 +105,27 @@ export default class GameUser extends User {
 
         this.room.add(this)
 
-        // First-visit discovery stamps (server-decided).
-        const ROOM_STAMPS = { 814: 30, 815: 31 }   // Hidden Lake, Underwater
+        // First-visit discovery stamps (server-decided, idempotent).
+        const ROOM_STAMPS = {
+            100: 35, 110: 36, 111: 37, 120: 38, 121: 39, 130: 40,
+            200: 41, 210: 42, 220: 43, 221: 44, 230: 45,
+            300: 46, 310: 47, 320: 48, 321: 49, 330: 50, 340: 51,
+            400: 52, 410: 53, 420: 54, 421: 55, 422: 56, 430: 57,
+            800: 58, 801: 59, 802: 60, 803: 61, 805: 62, 806: 63,
+            807: 64, 809: 65, 810: 66, 811: 67, 812: 68,
+            814: 30, 815: 31, 816: 69, 850: 70
+        }
         if (this.stamps && ROOM_STAMPS[room.id]) {
             this.stamps.award(ROOM_STAMPS[room.id]).catch(error => this.handler.error(error))
+        }
+
+        // Session: track unique rooms visited for multi-room stamps.
+        if (this.stamps) {
+            if (!this._visitedRooms) this._visitedRooms = new Set()
+            this._visitedRooms.add(room.id)
+            const count = this._visitedRooms.size
+            if (count >= 10) this.stamps.award(71).catch(error => this.handler.error(error))
+            if (count >= 20) this.stamps.award(72).catch(error => this.handler.error(error))
         }
     }
 

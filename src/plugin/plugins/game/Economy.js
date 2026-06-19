@@ -35,10 +35,12 @@ export default class Economy extends GamePlugin {
     }
 
     recycle(args, user) {
-        // Count every recycle (even past the coin cap) for the Recycler stamp (server-decided).
+        // Count every recycle (even past the coin cap) for recycling stamps (server-decided).
         user.recycleCount = (user.recycleCount || 0) + 1
-        if (user.stamps && user.recycleCount >= 10) {
-            user.stamps.award(20).catch(error => this.handler.error(error))
+        if (user.stamps) {
+            if (user.recycleCount >= 10) user.stamps.award(20).catch(error => this.handler.error(error))
+            if (user.recycleCount >= 25) user.stamps.award(29).catch(error => this.handler.error(error))
+            if (user.recycleCount >= 50) user.stamps.award(32).catch(error => this.handler.error(error))
         }
 
         const earned = user.recycleEarned || 0
@@ -80,6 +82,12 @@ export default class Economy extends GamePlugin {
         await user.resources.addQuantity(resource, -quantity)
         const coins = quantity * price
         user.updateCoins(coins)
+
+        if (user.stamps) {
+            user.sellCount = (user.sellCount || 0) + 1
+            if (user.sellCount >= 1)  user.stamps.award(33).catch(error => this.handler.error(error))
+            if (user.sellCount >= 10) user.stamps.award(34).catch(error => this.handler.error(error))
+        }
 
         user.send('resource_sold', {
             resource: resource,
