@@ -40,6 +40,11 @@
             "host": "localhost",
             "port": 6112,
             "maxUsers": 300
+        },
+        "Blizzard2": {
+            "host": "localhost",
+            "port": 6113,
+            "maxUsers": 300
         }
     },
     "cooldowns": {

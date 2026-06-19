@@ -14,7 +14,8 @@ cat > /app/config/config.json <<EOF
   "rateLimit": { "enabled": true, "addressConnectsPerSecond": 5, "addressEventsPerSecond": 50, "userEventsPerSecond": 10, "ipAddressHeader": false },
   "worlds": {
     "Login": { "host": "0.0.0.0", "port": 6111 },
-    "Blizzard": { "host": "0.0.0.0", "port": 6112, "maxUsers": ${BLIZZARD_MAX_USERS:-300} }
+    "Blizzard": { "host": "0.0.0.0", "port": 6112, "maxUsers": ${BLIZZARD_MAX_USERS:-300} },
+    "Blizzard2": { "host": "0.0.0.0", "port": 6113, "maxUsers": ${BLIZZARD2_MAX_USERS:-300} }
   },
   "cooldowns": { "send_emote": 250, "send_frame": 250 },
   "game": { "preferredSpawn": 0, "iglooIdOffset": 2000 },
