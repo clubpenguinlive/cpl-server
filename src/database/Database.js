@@ -125,6 +125,35 @@ export default class Database {
         })
     }
 
+    async getUserClub(userId) {
+        const membership = await this.clubMembers.findOne({
+            where: { userId },
+            include: [{ model: this.clubs, as: 'club' }]
+        })
+        if (!membership) return null
+        return { id: membership.clubId, name: membership.club.name, tag: membership.club.tag, xp: membership.club.xp, role: membership.role }
+    }
+
+    async getClubInfo(clubId) {
+        return await this.clubs.findOne({
+            where: { id: clubId },
+            include: [{ model: this.clubMembers, as: 'members', attributes: ['userId', 'role'] }]
+        })
+    }
+
+    async getClubLeaderboard() {
+        return await this.clubs.findAll({
+            attributes: ['id', 'name', 'tag', 'xp'],
+            order: [['xp', 'DESC']],
+            limit: 20,
+            include: [{
+                model: this.clubMembers,
+                as: 'members',
+                attributes: []
+            }]
+        })
+    }
+
     async getWorldPopulations() {
         return await this.getCrumb('worlds')
     }
