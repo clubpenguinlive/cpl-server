@@ -26,6 +26,22 @@ cited in §2.1. Containerization investigation + locked decisions live in the na
 canonical-record corrections this pass: the **PHP-FPM layer** is now documented in §1 as
 first-class, and the **Resend key git-history leak** is recorded in §5 (now RESOLVED - rotated 2026-06-16, old key revoked).
 
+**Reconciled 2026-06-18** (post-cutover): production migrated to the fully containerized Docker
+stack on cpl-01 (HOST-02, 10.0.0.43). Six containers (mariadb, cpl-migrate, cpl-login,
+cpl-blizzard, cpl-php, cpl-web + cloudflared) pulled from GHCR and running under Docker Compose;
+DB migrated + verified live (4 users/4 igloos). §1 updated to reflect the Docker topology. §5
+single-credential-source closed: creds now in one prod `.env` (Node + PHP entrypoint both read from
+env; `.my.cnf` backup copy is the only remaining outlier). All three per-repo `deploy.sh` scripts
+rewritten for the Docker-based prod path (git-archive overlay + remote docker build, no more
+`/opt/yukon` or pm2 references); `deploy/deploy.sh` SSH alias and remote path bugs fixed. Watch-it-
+render smoke harness (`smoke_watch_it_render.js`) ran and confirmed three PASSes: Hidden Lake
+`stamp_earned` event fires on room entry, recycling pays +3 coins (server-validated), challenge claim
+returns 100 coins end-to-end. Recycling and challenge-claim [watch-it-render] residue items
+cleared. Mine depth glitch screenshot captured (needs your visual check). Ruffle touch overlay: DOM
+selector not found headlessly; real-device test still required (§3 unchanged). Icon row normalized:
+y=70, 90x84 mail/challenge/stamp icons committed. CF website unblocked after repo rename
+(`account_id` added to `wrangler.jsonc`, `fd376ed` pushed).
+
 ---
 
 ## 0. Read this first — items already done that were listed as pending
@@ -66,9 +82,21 @@ UEFI (`/sys/firmware/efi` present). The 06-05 snapshot in earlier drafts (client
 | **Local client dev server** (not in plan) | DONE | `npm run dev` serves the real client at localhost:8080 with hot reload (`4808ba8`); frontend-only |
 | **Prod VM Gen2/UEFI** (not in plan) | DONE 2026-06-06 | 2-SCSI-disk layout (root + 1GB ESP), static MAC keeps .72; runbook at `scripts/gen1-to-gen2-hyperv-runbook.md` |
 
-Remaining **[watch-it-render]** from that cluster (Nick's eyes, all deployed): Challenges claim
-payout end-to-end; Recycling +3 float / 150 cap in the Eco room; a StampPopup firing (visit Hidden
-Lake); iPhone rotate + buffer; 1440p autofit.
+Remaining **[watch-it-render]** from that cluster (Nick's eyes, all deployed): a StampPopup
+rendering on screen (stamp_earned event confirmed by harness; popup visual not yet eyeballed);
+iPhone rotate + buffer; 1440p autofit. Recycling and Challenge claim cleared 2026-06-18 (see below).
+
+### Shipped 2026-06-17/18 (containerization + post-cutover polish)
+
+| Item | Reality | Evidence |
+|---|---|---|
+| **Containerized Docker stack** | DONE + live on cpl-01 (HOST-02, 10.0.0.43) | 6 containers via Docker Compose; images at `ghcr.io/clubpenguinlive/`; DB migrated + verified (4 users/4 igloos); CF tunnel live |
+| **Icon row normalized** | DONE | y=70, 90x84 mail/challenge/stamp icons; committed |
+| **Recycling +3 coins [watch-it-render]** | CONFIRMED PASS (automated) | `smoke_watch_it_render.js` harness: `recycle_reward` event, `+3`, `total=104810`, `capped=false` |
+| **Challenge claim [watch-it-render]** | CONFIRMED PASS (automated) | Harness: `challenge_claimed` event, `reward=100`, `new coins=104910` |
+| **Hidden Lake stamp_earned [watch-it-render]** | CONFIRMED PASS (automated) | Harness: `stamp_earned` fires on room 814 entry (`stamp=30`, `name="Lake Finder"`) |
+| **Deploy scripts rewritten for Docker** | DONE | All three per-repo `deploy.sh` now use git-archive overlay + remote `docker build`; `deploy/deploy.sh` SSH alias (`cpl-01` → `cpl-prod`) and remote path (`/opt/cpl` → `~/cpl/server-clubpenguinlive/deploy`) fixed |
+| **CF website unblocked** | DONE | `account_id` added to `wrangler.jsonc` (`fd376ed`); new CF Workers build triggered after repo rename |
 
 ### Reality vs notes/memory — contradictions
 
@@ -91,18 +119,20 @@ Lake); iPhone rotate + buffer; 1440p autofit.
 Club Penguin Live is **launched, public, and playable end to end**. Two decoupled front doors
 (INFRA §1): the apex `clubpenguinlive.net` marketing landing (Cloudflare Workers static site, up
 independent of home) and `play.clubpenguinlive.net` (the Yukon game on the on-prem VM via an
-outbound Cloudflare Tunnel). The game runs nginx → static `client/dist` + pm2 `Login`/`Blizzard`
-World servers → MariaDB, **plus a PHP-FPM 8.3 layer** that owns the account flows: nginx routes
-`^/(create|account)/.*\.php$` to `php-fpm` over `/run/php/php8.3-fpm.sock`, and the PHP
-(`create.php`/`account.php` → `Database.php`) talks to MariaDB **directly** with its own DB
-credentials (its own `db-config.php`), separate from the node server. PHP-FPM is a first-class part
-of the stack, not an afterthought (verified 2026-06-16). **Live now:** 38 walkable rooms (classic-island coverage); 24 game rooms
-(3 native Phaser — Card-Jitsu 998, Sensei 951, Sled 999 — the rest classic CP Flash SWFs via the
-self-hosted Ruffle harness); the Tier-5 gathering economy (Fishing/Mining/Surfing/Hauling
-minigames → server-capped coins + skill XP + resources → Skills panel + sell-for-coins trade-in);
-mobile corner-chip nav + slim toolbar; and the four-repo dev-01→prod deploy chain
-(`client`/`server`/`assets`-clubpenguinlive + the apex `clubpenguinlive.net`). Verified this pass:
-both sites 200, prod git HEADs == GitHub, marketing CSP hardened.
+outbound Cloudflare Tunnel). The game runs as a **Docker Compose stack** (six containers) on cpl-01
+(HOST-02, 10.0.0.43): `cpl-web` (nginx + built client), `cpl-php` (PHP-FPM 8.3), `cpl-login` +
+`cpl-blizzard` (Node Yukon worlds), `mariadb`, and `cloudflared`. Images live at
+`ghcr.io/clubpenguinlive/`. PHP-FPM owns the account flows (create/account PHP routes) and talks
+to MariaDB directly; credentials come from the prod `.env` via the entrypoint (not from
+`db-config.php` in git). Deploy is git-archive overlay on the prod host + `docker build` + `docker
+compose up -d --no-deps` per repo (see `deploy.sh` in each repo). **Live now:** 38 walkable rooms
+(classic-island coverage); 24 game rooms (3 native Phaser: Card-Jitsu 998, Sensei 951, Sled 999;
+the rest classic CP Flash SWFs via the self-hosted Ruffle harness); the Tier-5 gathering economy
+(Fishing/Mining/Surfing/Hauling minigames → server-capped coins + skill XP + resources → Skills
+panel + sell-for-coins trade-in); mobile corner-chip nav + slim toolbar; and the four-repo
+dev-01→prod deploy chain (`client`/`server`/`assets`-clubpenguinlive + the apex
+`website-clubpenguinlive`). Verified 2026-06-18: both sites 200, DB intact (4 users/4 igloos),
+marketing CSP hardened, containerized stack healthy.
 
 ---
 
@@ -118,8 +148,8 @@ until a second play exists** (the 12 sub-atlases make it buildable later). Room 
 stamp award path — though the Recycler stamp id 20 piggybacks at 10 recycles/session). Rate set
 below the cheapest current per-action minigame earn: `RECYCLE_REWARD=3`/item,
 `RECYCLE_SESSION_CAP=150` (`Economy.js:22-23`; server `e4acdc7`, client `ee177b9`). Machine
-animation re-enabled on successful recycle. **[watch-it-render]** residue: eyeball the +3 float and
-the 150 cap in the Eco room live.
+animation re-enabled on successful recycle. **[watch-it-render] CONFIRMED 2026-06-18:** automated
+harness PASS: `recycle_reward` event fires, `+3` coins, `total=104810`, `capped=false`.
 
 ### 2.3 Hidden Lake door on the Cave pond — **[done 2026-06-09]**
 **Shipped:** client `3e544ce` (`'lake': triggerRoom(814, 760, 500)` in Cave.js) + assets `00368de`
@@ -237,9 +267,10 @@ Skills panel → sell). What's left of T5 and the four greenlit specs:
 | Feature | One-liner | Spec | Effort | Build mode |
 |---|---|---|---|---|
 | **Stamps** | CP stamp book; server-authoritative award, mirrors UserSkills | `SPEC_stamps.md` (full) | L | **[done 2026-06-08]** — server `fe7c9f2`+`a59e32b`, client `79adf45` (StampBook B / StampPopup), assets `f877b33`, migration `0002` applied. **v1 = curated 12 earnable stamps, name-based.** Remaining: icon-art sourcing pass, then expand defs toward ~700 (Houdini `stamps.sql`) — both **[decision-needed]** (scope/art). |
-| **Daily challenges** | 3 deterministic daily goals (date-seeded like DailyCatalog) + per-user progress + claim | `SPEC_daily_challenges.md` (full) | M | **[done 2026-06-08]** — server `e2459fe`, client `14c32f3` (panel, J key), assets `c2fdfe1`, migration `0001` applied. Rewards 80-120, claim server-validated. **[watch-it-render]** residue: one end-to-end claim with eyes on. |
+| **Daily challenges** | 3 deterministic daily goals (date-seeded like DailyCatalog) + per-user progress + claim | `SPEC_daily_challenges.md` (full) | M | **[done 2026-06-08]** — server `e2459fe`, client `14c32f3` (panel, J key), assets `c2fdfe1`, migration `0001` applied. Rewards 80-120, claim server-validated. **[watch-it-render] CONFIRMED 2026-06-18:** automated harness PASS: `challenge_claimed` event fires, `reward=100`, `new coins=104910`. |
 | **Skills → player-card drawer** | Move Skills into an Items\|Skills tab on the player card | `SPEC_skills_card_drawer.md` (full) | M | **[cut 2026-06-16]** — removed from the active roadmap. The standalone `SkillsWidget` already delivers the full Skills view (8 rows + trade-in), so the card-drawer duplicate is redundant for now. Spec retained at namespace root as a parked idea; revisit only if the card-integrated UX is specifically wanted. Side-fix sledding 8th row already shipped (`6351196`). |
 | **Event / party rooms** | Date-driven room re-skins (spooky/winter) from native variant packs | `SPEC_event_rooms.md` (full) | M | **Mechanism: [ready]** (`activeVariant` helper + Join payload + client pack-swap, no DB); **content calendar: [decision-needed]** (which events/dates). Re-skins bulk-pullable; structural variants individual-port. |
+| **Clubs (Clans)** | In-game groups: create (500 coins), join, leave, leaderboard; 1% passive XP pool from coin earnings; [TAG] nametag display in chat | server#10 / client#7 | M | **[done 2026-06-19]** — server `2e9c9d1` (Club plugin, Clubs/ClubMembers models, migration `0004_clubs.sql`), client `8b77b19` (ClubsPanel N key + purple icon, PenguinLoader nametag tag, Club network plugin), assets `2c3e802` (crumbs). Tables live on prod: `clubs` + `club_members`. |
 
 Stamps and Challenges shipped 2026-06-08; their spec headers still say "greenlight-pending, not
 built" — stale, treat the code as authoritative. Also outstanding within T5: **Cooking /
@@ -254,7 +285,7 @@ Pizzatron (Cooking) is the obvious port per the fork audit.
 |---|---|---|---|
 | **Atlas-defer (pre-login boot ~7.8MB)** | `mail` (2.46MB) + `iglooedit` (465KB) eagerly in `preload-pack.json`. Deferring is a real engine refactor (persistent sleep/wake scenes), not a config tweak. INFRA §9. | [decision-needed] (scope) / deep | L |
 | **Tablet-nav anchoring** | Mobile float-nav is keyed to in-canvas HUD pixel coords + a width-only 700px breakpoint; fragile on ~1.5-1.6 aspect tablets (flagged by code-review). | [watch-it-render] | S-M |
-| **Single credential source** | DB creds live in **4** hand-synced copies, re-confirmed 2026-06-16: (1) `server/config/config.json`, (2) `client/create/scripts/php/db-config.php`, (3) `client/account/scripts/php/db-config.php`, (4) `/opt/backups/.my.cnf`. The 2026-06-05 rotation moved the PHP copies to gitignored `db-config.php` but did **not** consolidate the count. Folding into one source is **in-scope for the containerization migration** (single `.env`), not done. INFRA §5/§9. | [ready] / containerization | M |
+| **Single credential source** | **RESOLVED 2026-06-17** via containerization. DB creds now live in one prod `.env` on the Docker host. The Node entrypoint reads `DB_*` env vars directly; the PHP entrypoint renders `db-config.php` from the same vars at startup. The old `server/config/config.json` and PHP `db-config.php` files are no longer present on the prod host. Only outlier: the nightly `mysqldump` backup still uses a `.my.cnf` on the host (or inside the mariadb container) for credentials; consolidate that into the `.env`-driven entrypoint pattern if desired. | [done / minor outlier] | - |
 | **Resend SMTP key (git-history leak)** | **RESOLVED 2026-06-16.** Rotated out of band: a new sending-scoped key was issued, the old key revoked, and prod `config.json` updated. The old key in the server repo's pre-rename history (`config/config.json.bak-pre-rename` at `9c3c14a`/`b5daeac`, not at HEAD) is now dead. The key moves from prod `config.json` into the gitignored stack `.env` at containerization (decision 8). No action remaining; do not re-raise. | [done] | - |
 | **Off-prod / atomic builds** | Server `npm run build` does `rimraf dist` first → a failed build wipes `dist`, no rollback; client builds on prod too. Build-to-temp-then-swap. INFRA §9. | [ready] | M |
 | **Migration runner** | **DONE 2026-06-06.** `utils/migrate.js` + `migrations/` + `npm run migrate` (`--status`), tracked in `schema_migrations`. Proven twice on prod: `0001_user_challenges` (Challenges) and `0002_user_stamps` (Stamps), both applied + features shipped on top. | [done] | M (enabler) |
@@ -276,17 +307,18 @@ Pizzatron (Cooking) is the obvious port per the fork audit.
    (The legacy Houdini repo turned out already deleted.)
 
 ### B. Ready to build now (no decision needed)
-*(empty — every ready-now item has shipped: lake door, deploy dedup, migration runner, ops
-scripts, sledding row. The next builds are all gated on either your eyes or your decisions.)*
+*(empty — every ready-now item has shipped: lake door, deploy dedup, migration runner, ops scripts,
+sledding row, containerization. The next builds are all gated on either your eyes or your decisions.)*
 
 ### C. Watch-it-render (queue for a live session with you)
-1. **Verify the 06-08/09 cluster** (§0 second table) — Challenges claim, Recycling cap, a stamp
-   earn, iPhone rotate/buffer, 1440p autofit. Cheapest wins; all already deployed.
-2. **Ruffle touch overlay device playtest** (§3) — already built + live; phone-test the 6 mapped
-   games (Cart Surfer, Jet Pack, Thin Ice first) and confirm the pointer games need none.
-3. **Mine depth glitch** (§2.6) and **Sensei real-match confirm** (§2.5) — cheap, eyes-on. The
-   internal-name leak (§2.8) turned out already fixed; just glance at a loading screen.
-4. **Tablet-nav anchoring** (§5). (The Skills → player-card drawer was **cut 2026-06-16**, §4 — SkillsWidget already covers it.)
+1. **Mine depth glitch** (§2.6) and **Sensei real-match confirm** (§2.5) — screenshot captured
+   (harness), needs your visual check on the mine layering. Sensei still needs a live playtest.
+2. **Ruffle touch overlay device playtest** (§3) — built + live; real phone required. Start with
+   Cart Surfer, Jet Pack, Thin Ice.
+3. **iPhone rotate + 1440p autofit** and **tablet-nav anchoring** (§5) — eyeball sessions.
+4. **A stamp earn visible in the UI** (visit Hidden Lake or another stamp trigger; stamp_earned event
+   is confirmed PASS by harness, but StampPopup popup render on screen is still unverified).
+(Cleared 2026-06-18 by automated harness: Recycling +3 coins PASS, Challenge claim PASS.)
 
 ### D. Later / deep / blocked
 1. **Atlas-defer 7.8MB boot refactor** (§5) — real engine work; highest infra payoff but largest risk.
