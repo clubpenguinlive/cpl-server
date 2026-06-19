@@ -4,14 +4,14 @@ import pool from '@data/catalog_pool.json'
 import classics from '@data/catalog_classics.json'
 
 
-// Penguin Style = the one shop with a pool large enough to rotate (2,872 renderable clothing
-// items). Per Addendum 2 cadence rule (large pool -> weekly), it drops ~35 items/week
-// (~1.6 yr to cycle). Selection is deterministic per ISO week, rarity-weighted (cheaper items
-// appear more often so expensive items are the weekly chase), with a permanent Classics set and
-// a "recently rotated out" list (last week's items that just left). Everything is server-derived
-// and cannot be influenced by the client.
+// Penguin Style monthly catalog: 40 items rotate on the 1st of each month.
+// Seed: year * 12 + month -- deterministic per calendar month, reproducible across servers.
+// Selection is rarity-weighted (cheaper items appear more often; expensive items are the monthly
+// chase). 3 secret items per month are picked from the remaining pool after the main selection
+// and shown as mystery cards in the catalog -- revealed by clicking.
 
-const WEEKLY_COUNT = 35
+const MONTHLY_COUNT = 40
+const SECRETS_COUNT = 3
 
 function mulberry32(seed) {
     return function () {
@@ -21,19 +21,6 @@ function mulberry32(seed) {
         t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
         return ((t ^ (t >>> 14)) >>> 0) / 4294967296
     }
-}
-
-// ISO-8601 week number (UTC). Weeks start Monday; rotation boundary = Monday 00:00 UTC.
-function isoWeek(date) {
-    const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()))
-    const dayNum = (d.getUTCDay() + 6) % 7
-    d.setUTCDate(d.getUTCDate() - dayNum + 3)
-    const firstThursday = d.getTime()
-    d.setUTCMonth(0, 1)
-    if (d.getUTCDay() !== 4) {
-        d.setUTCMonth(0, 1 + ((4 - d.getUTCDay()) + 7) % 7)
-    }
-    return 1 + Math.round((firstThursday - d.getTime()) / (7 * 86400000))
 }
 
 export default class DailyCatalog extends GamePlugin {
@@ -46,19 +33,17 @@ export default class DailyCatalog extends GamePlugin {
         }
     }
 
-    // Rarity weight: cheaper items are common (higher weight), expensive items rare (the chase).
     weightFor(id) {
         const item = this.crumbs.items[id]
         const cost = (item && item.cost) || 100
         return 1 / Math.sqrt(Math.max(cost, 50))
     }
 
-    // Deterministic weighted selection of `count` distinct ids from the pool for a given seed.
-    weeklySelection(seed, count) {
-        const rand = mulberry32(seed)
+    // Weighted selection without replacement. Returns picked items and the leftover pool.
+    pick(seedValue, count) {
+        const rand = mulberry32(seedValue)
         const remaining = pool.slice()
         const picked = []
-
         while (picked.length < count && remaining.length > 0) {
             let total = 0
             for (const id of remaining) total += this.weightFor(id)
@@ -72,36 +57,48 @@ export default class DailyCatalog extends GamePlugin {
             picked.push(remaining[idx])
             remaining.splice(idx, 1)
         }
-        return picked
+        return { picked, remaining }
+    }
+
+    // Uniform Fisher-Yates shuffle of the leftover pool, returns first N as secrets.
+    pickSecrets(remaining, seedValue, count) {
+        const rand = mulberry32(seedValue ^ 0xA5A5A5A5)
+        const arr = remaining.slice()
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(rand() * (i + 1))
+            ;[arr[i], arr[j]] = [arr[j], arr[i]]
+        }
+        return arr.slice(0, count)
     }
 
     getCatalog(args, user) {
         const now = new Date()
-        const week = isoWeek(now)
-        const seed = now.getUTCFullYear() * 100 + week
+        const year = now.getUTCFullYear()
+        const month = now.getUTCMonth() + 1
+        const seed = year * 12 + month
 
-        const items = this.weeklySelection(seed, WEEKLY_COUNT)
+        const { picked: items, remaining } = this.pick(seed, MONTHLY_COUNT)
+        const secrets = this.pickSecrets(remaining, seed, SECRETS_COUNT)
 
-        // Last week's selection -> the items that just rotated out (not in this week's set).
-        const prevSeed = now.getUTCFullYear() * 100 + (week - 1)
-        const prevItems = this.weeklySelection(prevSeed, WEEKLY_COUNT)
-        const current = new Set(items)
-        const rotatedOut = prevItems.filter(id => !current.has(id)).slice(0, 12)
+        const prevMonth = month === 1 ? 12 : month - 1
+        const prevYear = month === 1 ? year - 1 : year
+        const { picked: prevItems } = this.pick(prevYear * 12 + prevMonth, MONTHLY_COUNT)
+        const currentSet = new Set(items)
+        const rotatedOut = prevItems.filter(id => !currentSet.has(id)).slice(0, 12)
 
-        // Seconds until next Monday 00:00 UTC (next rotation).
-        const day = now.getUTCDay()
-        const daysUntilMon = ((8 - day) % 7) || 7
-        const nextMon = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + daysUntilMon))
+        const nextMonth = new Date(Date.UTC(year, now.getUTCMonth() + 1, 1))
 
         user.send('daily_catalog', {
             shop: 'clothing',
-            cadence: 'weekly',
+            cadence: 'monthly',
             date: now.toISOString().slice(0, 10),
-            week: week,
-            items: items,
-            classics: classics,
-            rotatedOut: rotatedOut,
-            secondsUntilNext: Math.floor((nextMon - now) / 1000)
+            month,
+            year,
+            items,
+            secrets,
+            classics,
+            rotatedOut,
+            secondsUntilNext: Math.floor((nextMonth - now) / 1000)
         })
     }
 
