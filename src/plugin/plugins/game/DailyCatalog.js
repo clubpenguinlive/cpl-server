@@ -2,6 +2,7 @@ import GamePlugin from '@plugin/GamePlugin'
 
 import pool from '@data/catalog_pool.json'
 import classics from '@data/catalog_classics.json'
+import sportPool from '@data/catalog_sport_pool.json'
 
 
 // Penguin Style monthly catalog: 40 items rotate on the 1st of each month.
@@ -12,6 +13,7 @@ import classics from '@data/catalog_classics.json'
 
 const MONTHLY_COUNT = 40
 const SECRETS_COUNT = 3
+const SPORT_COUNT = 15
 
 function mulberry32(seed) {
     return function () {
@@ -40,9 +42,9 @@ export default class DailyCatalog extends GamePlugin {
     }
 
     // Weighted selection without replacement. Returns picked items and the leftover pool.
-    pick(seedValue, count) {
+    pick(seedValue, count, source = pool) {
         const rand = mulberry32(seedValue)
-        const remaining = pool.slice()
+        const remaining = source.slice()
         const picked = []
         while (picked.length < count && remaining.length > 0) {
             let total = 0
@@ -76,6 +78,25 @@ export default class DailyCatalog extends GamePlugin {
         const year = now.getUTCFullYear()
         const month = now.getUTCMonth() + 1
         const seed = year * 12 + month
+        const nextMonth = new Date(Date.UTC(year, now.getUTCMonth() + 1, 1))
+        const secondsUntilNext = Math.floor((nextMonth - now) / 1000)
+
+        if (args.shop === 'sport') {
+            const { picked: items } = this.pick(seed ^ 0xB00B, SPORT_COUNT, sportPool)
+            user.send('daily_catalog', {
+                shop: 'sport',
+                cadence: 'monthly',
+                date: now.toISOString().slice(0, 10),
+                month,
+                year,
+                items,
+                secrets: [],
+                classics: [],
+                rotatedOut: [],
+                secondsUntilNext
+            })
+            return
+        }
 
         const { picked: items, remaining } = this.pick(seed, MONTHLY_COUNT)
         const secrets = this.pickSecrets(remaining, seed, SECRETS_COUNT)
@@ -85,8 +106,6 @@ export default class DailyCatalog extends GamePlugin {
         const { picked: prevItems } = this.pick(prevYear * 12 + prevMonth, MONTHLY_COUNT)
         const currentSet = new Set(items)
         const rotatedOut = prevItems.filter(id => !currentSet.has(id)).slice(0, 12)
-
-        const nextMonth = new Date(Date.UTC(year, now.getUTCMonth() + 1, 1))
 
         user.send('daily_catalog', {
             shop: 'clothing',
@@ -98,7 +117,7 @@ export default class DailyCatalog extends GamePlugin {
             secrets,
             classics,
             rotatedOut,
-            secondsUntilNext: Math.floor((nextMonth - now) / 1000)
+            secondsUntilNext
         })
     }
 
