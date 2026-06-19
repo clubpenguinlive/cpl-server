@@ -11,7 +11,8 @@ const RESOURCE_PRICES = {
     cargo: 6,    // Hauling (Bean Counters)
     fish: 8,     // Fishing (Ice Fishing)
     ore: 10,     // Mining (Cart Surfer)
-    shell: 12    // Surfing (Catchin' Waves) - rarer
+    shell: 12,   // Surfing (Catchin' Waves) - rarer
+    pizza: 8     // Cooking (Pizzatron 3000)
 }
 
 // Recycling (Recycle Plant, room 816): a low-effort passive earn, so it pays a small flat amount per
