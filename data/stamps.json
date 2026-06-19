@@ -98,5 +98,21 @@
     "97": { "name": "Agent Recruit",     "group": "Missions",     "difficulty": 1, "member": 0 },
     "98": { "name": "Puffle Lover",      "group": "Puffles",      "difficulty": 1, "member": 0 },
     "99": { "name": "Puffle Expert",     "group": "Puffles",      "difficulty": 2, "member": 0 },
-    "100": { "name": "Ultimate Penguin", "group": "Legend",       "difficulty": 4, "member": 0 }
+    "100": { "name": "Ultimate Penguin", "group": "Legend",       "difficulty": 4, "member": 0 },
+
+    "101": { "name": "Met Aunt Arctic",  "group": "Mascots",      "difficulty": 2, "member": 0 },
+    "102": { "name": "Met Gary",         "group": "Mascots",      "difficulty": 2, "member": 0 },
+    "103": { "name": "Met Cadence",      "group": "Mascots",      "difficulty": 2, "member": 0 },
+    "104": { "name": "Met Rockhopper",   "group": "Mascots",      "difficulty": 2, "member": 0 },
+    "105": { "name": "Met Franky",       "group": "Mascots",      "difficulty": 2, "member": 0 },
+    "106": { "name": "Met G Billy",      "group": "Mascots",      "difficulty": 2, "member": 0 },
+    "107": { "name": "Met Petey K",      "group": "Mascots",      "difficulty": 2, "member": 0 },
+    "108": { "name": "Met Stompin Bob",  "group": "Mascots",      "difficulty": 2, "member": 0 },
+    "109": { "name": "Met Sensei",       "group": "Mascots",      "difficulty": 2, "member": 0 },
+    "110": { "name": "Met Dot",          "group": "Mascots",      "difficulty": 2, "member": 0 },
+    "111": { "name": "Met Jet Pack Guy", "group": "Mascots",      "difficulty": 2, "member": 0 },
+    "112": { "name": "Met PH",           "group": "Mascots",      "difficulty": 2, "member": 0 },
+    "113": { "name": "Met Herbert",      "group": "Mascots",      "difficulty": 2, "member": 0 },
+    "114": { "name": "Met Rookie",       "group": "Mascots",      "difficulty": 2, "member": 0 },
+    "115": { "name": "Met Cara",         "group": "Mascots",      "difficulty": 2, "member": 0 }
 }

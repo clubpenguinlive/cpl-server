@@ -127,6 +127,21 @@ export default class GameUser extends User {
             if (count >= 10) this.stamps.award(71).catch(error => this.handler.error(error))
             if (count >= 20) this.stamps.award(72).catch(error => this.handler.error(error))
         }
+
+        // Mascot encounter stamps: entering a room with a named mascot bot awards the meet stamp.
+        if (this.stamps) {
+            const MASCOT_STAMPS = {
+                'Aunt Arctic': 101, 'Gary': 102, 'Cadence': 103, 'Rockhopper': 104,
+                'Franky': 105, 'G Billy': 106, 'Petey K': 107, 'Stompin Bob': 108,
+                'Sensei': 109, 'Dot': 110, 'Jet Pack Guy': 111, 'PH': 112,
+                'Herbert': 113, 'Rookie': 114, 'Cara': 115
+            }
+            for (const u of Object.values(room.users)) {
+                if (u.isBot && MASCOT_STAMPS[u.username]) {
+                    this.stamps.award(MASCOT_STAMPS[u.username]).catch(error => this.handler.error(error))
+                }
+            }
+        }
     }
 
     joinTable(table) {
