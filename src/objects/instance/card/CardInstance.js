@@ -412,6 +412,11 @@ export default class CardInstance extends BaseInstance {
         user.update({ ninjaProgress: 0 })
 
         user.send('award', { rank: user.ninjaRank })
+
+        const BELT_STAMPS = { 1: 21, 2: 22, 3: 23, 4: 24, 5: 25, 6: 26, 7: 27, 8: 28 }
+        if (user.stamps && BELT_STAMPS[rank]) {
+            user.stamps.award(BELT_STAMPS[rank]).catch(error => user.handler.error(error))
+        }
     }
 
     addAwards(user, rank) {

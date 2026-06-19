@@ -21,14 +21,17 @@ const XP_PER_COIN = 2
 const COINS_PER_RESOURCE = 20
 
 // Per-game stamp triggers (server-decided, fired in gameOver). `play` = earned on any completed game;
-// `score` = earned when the SERVER-validated (capped) score crosses a threshold. Stamp ids -> data/stamps.json.
+// `score` = array of { id, min } thresholds -- all matching tiers are awarded. Stamp ids -> data/stamps.json.
 const GAME_STAMPS = {
-    904: { play: 1, score: { id: 2, min: 400 } },   // Ice Fishing  -> Lucky Catch / Fish Expert
-    901: { play: 3 },                                // Bean Counters-> Bean Counter
-    912: { play: 4 },                                // Catchin' Waves-> Wave Rider
-    906: { play: 5 },                                // Jet Pack     -> Soaring
-    909: { play: 6 },                                // Thin Ice     -> Ice Carver
-    905: { score: { id: 7, min: 400 } }              // Cart Surfer  -> Cart Master
+    904: { play: 1,  score: [{ id: 2, min: 400 }, { id: 8,  min: 600 }, { id: 75, min: 800 }] },  // Ice Fishing
+    901: { play: 3,  score: [{ id: 16, min: 100 }, { id: 80, min: 200 }] },                         // Bean Counters
+    912: { play: 4,  score: [{ id: 12, min: 100 }, { id: 77, min: 200 }] },                         // Catchin' Waves
+    906: { play: 5,  score: [{ id: 13, min: 100 }, { id: 78, min: 150 }] },                         // Jet Pack
+    909: { play: 6,  score: [{ id: 14, min: 150 }, { id: 79, min: 200 }] },                         // Thin Ice
+    905: {           score: [{ id: 15, min: 200 }, { id: 7,  min: 400 }, { id: 76, min: 600 }] },   // Cart Surfer
+    999: { play: 9,  score: [{ id: 17, min: 75 }] },                                                // Sled Racing
+    900: { play: 18 },                                                                               // Astro Barrier
+    903: { play: 19 }                                                                                // Hydro Hopper
 }
 
 
@@ -99,15 +102,27 @@ export default class Minigame extends GamePlugin {
             }
         }
 
-        // Stamps (server-decided): a play stamp and/or a score stamp once the capped score crosses a threshold.
-        if (user.stamps && GAME_STAMPS[gameId]) {
+        // Stamps (server-decided): play and score-threshold stamps, plus session multi-game stamps.
+        if (user.stamps) {
             const s = GAME_STAMPS[gameId]
-            if (s.play) {
-                user.stamps.award(s.play).catch(error => this.handler.error(error))
+            if (s) {
+                if (s.play) {
+                    user.stamps.award(s.play).catch(error => this.handler.error(error))
+                }
+                if (s.score) {
+                    for (const tier of s.score) {
+                        if (baseCoins >= tier.min) {
+                            user.stamps.award(tier.id).catch(error => this.handler.error(error))
+                        }
+                    }
+                }
             }
-            if (s.score && baseCoins >= s.score.min) {
-                user.stamps.award(s.score.id).catch(error => this.handler.error(error))
-            }
+
+            if (!user._gamesPlayed) user._gamesPlayed = new Set()
+            user._gamesPlayed.add(gameId)
+            const gamesCount = user._gamesPlayed.size
+            if (gamesCount >= 3) user.stamps.award(73).catch(error => this.handler.error(error))
+            if (gamesCount >= 5) user.stamps.award(74).catch(error => this.handler.error(error))
         }
 
         // Skill XP + resource drops scale off the validated (pre-multiplier) coins.
