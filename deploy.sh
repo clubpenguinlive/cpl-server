@@ -1,38 +1,30 @@
 #!/usr/bin/env bash
-# Deploy the CPL server from dev-01 to prod. Run from this repo on dev-01.
-# See DEPLOY.md. prod is a deploy target: it never commits or pushes.
-# NOTE: this restarts the live game and disconnects connected players.
+# Deploy the CPL server to the Docker stack on cpl-prod.
+# Overlays server files via git archive, builds cpl-server on the prod host,
+# then hot-swaps cpl-login and cpl-blizzard. No pm2 on prod; no git remote.
+# NOTE: restarts both game worlds and disconnects connected players.
+# NOTE: if this deploy includes schema changes, run migrations first:
+#   ssh cpl-prod "docker compose -f ~/cpl/server-clubpenguinlive/deploy/docker-compose.yml run --rm cpl-migrate"
 set -euo pipefail
 
 BRANCH=master
-# Single source for the prod address: the `cpl-prod` Host alias in ~/.ssh/config on dev-01
-# (HostName 10.0.0.72, User nick). Override per-run with CPL_PROD=user@host if ever needed.
 PROD="${CPL_PROD:-cpl-prod}"
+REGISTRY="${REGISTRY:-ghcr.io/clubpenguinlive}"
+COMPOSE_FILE="~/cpl/server-clubpenguinlive/deploy/docker-compose.yml"
 
-# Pre-flight: config/config.json (DB creds, crypto secret) is gitignored and NOT
-# shipped by git push; the server imports it at startup and the build copies it
-# into dist only if present. A missing or malformed config makes the server
-# crash-loop after the (destructive) build+restart. Verify it exists and is valid
-# JSON with a non-empty DB password BEFORE pushing, so a bad/absent config aborts
-# the deploy here instead of taking the live game down.
-echo ">> pre-flight: required runtime config present + valid on prod"
-ssh "$PROD" bash -s <<'PREFLIGHT'
-set -e
-f="/opt/yukon/server/config/config.json"
-[ -f "$f" ] || { echo "  MISSING: $f (copy config_example.json and fill in)"; exit 1; }
-python3 -c "import json,sys; d=json.load(open(sys.argv[1])); assert d.get('database',{}).get('password'), 'database.password is empty'" "$f" \
-  || { echo "  invalid/incomplete: $f"; exit 1; }
-echo "  config OK"
-PREFLIGHT
-
-echo ">> publishing to GitHub (source of truth)"
+echo ">> publishing to GitHub"
 git push origin "$BRANCH"
 
-echo ">> shipping to prod (rejected if prod has uncommitted hand-edits)"
-git push prod "$BRANCH"
+echo ">> overlaying server files onto $PROD"
+git archive HEAD | ssh "$PROD" "tar -x -C ~/cpl/server-clubpenguinlive/"
 
-echo ">> building + restarting on prod (this bounces Login + Blizzard)"
-ssh "$PROD" 'cd /opt/yukon/server && npm run build && npm run restart'
+echo ">> building cpl-server on $PROD"
+ssh "$PROD" "docker build \
+  -t ${REGISTRY}/cpl-server:stable \
+  ~/cpl/server-clubpenguinlive/"
+
+echo ">> swapping cpl-login + cpl-blizzard (disconnects all players)"
+ssh "$PROD" "docker compose -f $COMPOSE_FILE up -d --no-deps cpl-login cpl-blizzard"
 
 echo ">> deployed $(git rev-parse --short HEAD) to prod"
-echo ">> verify: ssh $PROD 'pm2 list'"
+echo ">> verify: ssh $PROD 'docker compose -f $COMPOSE_FILE ps'"
