@@ -23,8 +23,8 @@ ssh "$PROD" "docker build \
   -t ${REGISTRY}/cpl-server:stable \
   ~/cpl/server-clubpenguinlive/"
 
-echo ">> swapping cpl-login + cpl-blizzard (disconnects all players)"
-ssh "$PROD" "docker compose -f $COMPOSE_FILE up -d --no-deps cpl-login cpl-blizzard"
+echo ">> swapping cpl-login + cpl-blizzard + cpl-blizzard2 (disconnects all players)"
+ssh "$PROD" "docker compose -f $COMPOSE_FILE up -d --no-deps cpl-login cpl-blizzard cpl-blizzard2"
 
 echo ">> deployed $(git rev-parse --short HEAD) to prod"
 echo ">> verify: ssh $PROD 'docker compose -f $COMPOSE_FILE ps'"
