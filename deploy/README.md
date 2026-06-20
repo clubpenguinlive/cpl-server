@@ -45,7 +45,7 @@ credential: the builder SSHes in and the host pulls during the run (decision 3).
 A feature is closeable only when it runs end to end: renders on screen, plays, pays out as applicable. Code presence is not sufficient. Two proof cases from this project:
 
 - **Clubs** (server#10/client#7): shipped and closed while crashing every login. A Sequelize association alias mismatch (`as: 'club'` vs `as: 'Club'`) passed all code review but broke `GameUser.load` on every connection. The feature was "present" in every file and still took down all logins.
-- **Puffles** (server#4/client#5): server plugin and client scene both fully implemented. Closed as built. The Pet Shop room 404s at runtime because `assets-clubpenguinlive/media/rooms/pet/pet-pack.json` was never created. Code present, feature completely inaccessible.
+- **Cooking/Pizzatron** (server#8): MiniGame.js has game 910 defined, but the handler comment reads "wiring reserved; game not yet live." No SWF in the assets repo, no `triggerGame(910)` call anywhere in the client. Closed as "code present," reopened when verified the game is completely unlaunchable.
 
 **Check:** before closing any feature issue, verify the critical path executes: the user can reach the feature, interact with it, and receive the expected outcome. For game economy features, verify a payout event fires server-side.
 
@@ -57,7 +57,7 @@ For any feature that introduces a new room, minigame, or UI screen: before closi
 - The room media directory (`assets-clubpenguinlive/media/rooms/<room>/`) with actual sprite files
 - Any SWF or minigame file referenced by `triggerGame()` or a Ruffle mount
 
-**Check:** grep the client scene for `loadPack` or `assets/media/rooms/` and confirm each path exists in `assets-clubpenguinlive/`. Puffles failed precisely because no one verified `media/rooms/pet/` existed before closing.
+**Check:** grep the client scene for `loadPack` or `assets/media/rooms/` and confirm each path exists in `assets-clubpenguinlive/` or the piefruit base layer in prod. Cooking/Pizzatron failed this check: game 910 is in MiniGame.js but the SWF is absent from the assets repo and there is no client trigger.
 
 ---
 
