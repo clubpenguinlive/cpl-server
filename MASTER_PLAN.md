@@ -174,11 +174,15 @@ spawn coords to `Cave.js`; the Cave room id and its `cave-physics.json` zone nee
 **What:** Catalog rotation cadence for the Sport Shop / furniture catalogs is unset. The pattern
 exists and is proven (`DailyCatalog.js` weekly clothing rotation). **Blocking:** your cadence pick
 (weekly? monthly? which items rotate). **Effort:** S-M (reuse the DailyCatalog deterministic-seed
-pattern). **Risk:** low. **Verified 2026-06-09:** the furniture catalog EXISTS as a static UI
-(`interface/catalogs/furniture/FurnitureCatalog.js`, opened from IglooEdit, purchases via
-PurchaseValidator) — rotation would be additive. The Sport Shop's in-room catalog button exists but
-`Sport.js onCatalogClick()` is an **empty stub** — clicking does nothing today; wiring it is part
-of this item. `DailyCatalog` itself is clothing-only.
+pattern). **Risk:** low.
+
+**Correction (2026-06-19 functional audit):** The §2.4 "empty stub" claim was stale. `Sport.js
+onCatalogClick()` at line 214 calls `this.interface.loadWidget('SportCatalog')`, which is fully
+implemented: `SportCatalog.js` handles sell-resource logic; `DailyCatalog.js` lines 84-98 serve 15
+items from a 273-item pool (`data/catalog_sport_pool.json`) when `shop === 'sport'`. The Sport Shop
+catalog is **already working** — server#2 was closed correctly. What remains is the **rotation
+cadence decision** (what triggers a new selection, how often) and whether the furniture catalog also
+gets rotation. `DailyCatalog` is clothing-only today.
 
 ### 2.5 Sensei real-win verification — **[watch-it-render / done-verify]**
 **What:** The card payout is verified **by code path**: `CardInstance.js:378`
@@ -275,11 +279,22 @@ Skills panel → sell). What's left of T5 and the four greenlit specs:
 | **Clubs (Clans)** | In-game groups: create (500 coins), join, leave, leaderboard; 1% passive XP pool from coin earnings; [TAG] nametag display in chat | server#10 / client#7 | M | **[done 2026-06-19]** — server `2e9c9d1` (Club plugin, Clubs/ClubMembers models, migration `0004_clubs.sql`), client `8b77b19` (ClubsPanel N key + purple icon, PenguinLoader nametag tag, Club network plugin), assets `2c3e802` (crumbs). Tables live on prod: `clubs` + `club_members`. |
 
 Stamps and Challenges shipped 2026-06-08; their spec headers still say "greenlight-pending, not
-built" — stale, treat the code as authoritative. **Cooking (server#8) and Performing (server#9) are
-also built:** `MiniGame.js` maps Pizzatron (game 910) to `skill: 'cooking'`, `resource: 'pizza'`;
-`Performing.js` handles `perform_act` awarding 15 XP/act (Stage play-through). Both issues closed.
-**Agent** skill remains UI-only (no game). Puffles v1 (server#4 + client#5) and Leaderboard UI
-(client#6) are also built and closed — all three were filed and confirmed in the 2026-06-19 audit.
+built" — stale, treat the code as authoritative. **Performing (server#9) is built:** `Performing.js` handles `perform_act` awarding 15 XP/act via
+the 6 Stage switchboxes (not the hidden costume/script buttons — those belong to a deferred
+play-rotation feature). Issue closed correctly.
+
+**Cooking/Pizzatron (server#8) is NOT built.** `MiniGame.js` has game 910 reserved with comment
+"wiring reserved; game not yet live." No Pizzatron SWF in assets; no `triggerGame(910)` in the
+client; the Pizza Parlor bead-door button is a non-functional hint. Server#8 reopened.
+
+**Puffles (server#4 + client#5) are NOT fully built.** Server Pet plugin events are implemented
+but `assets-clubpenguinlive/media/rooms/pet/pet-pack.json` does not exist — the Pet Shop room
+404s at runtime. Both issues reopened.
+
+**Leaderboard (client#6)** is built: `LeaderboardPanel.js` sends `get_leaderboard`; server
+`Leaderboard.js` runs SQL queries with 5-min caching and returns top-50 rows. Closed correctly.
+
+**Agent** skill remains UI-only (no game).
 
 ---
 
