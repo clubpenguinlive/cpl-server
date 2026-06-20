@@ -18,6 +18,7 @@ cat > /app/config/config.json <<EOF
     "Iceberg": { "host": "0.0.0.0", "port": 6113, "maxUsers": ${BLIZZARD2_MAX_USERS:-300} }
   },
   "bots": { "enabled": ${BOTS_ENABLED:-true} },
+  "mascotVisits": ${MASCOT_VISITS:-[]},
   "cooldowns": { "send_emote": 250, "send_frame": 250 },
   "game": { "preferredSpawn": 0, "iglooIdOffset": 2000 },
   "email": {
