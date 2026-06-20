@@ -38,6 +38,29 @@ credential: the builder SSHes in and the host pulls during the run (decision 3).
 5. Keep the old prod VM parked as rollback; reclaim it after a stable window; turn `swgr-linux-runner`
    back on.
 
+## Done-criteria for closing issues (standing rules)
+
+### 1. Functional-not-symbolic
+
+A feature is closeable only when it runs end to end: renders on screen, plays, pays out as applicable. Code presence is not sufficient. Two proof cases from this project:
+
+- **Clubs** (server#10/client#7): shipped and closed while crashing every login. A Sequelize association alias mismatch (`as: 'club'` vs `as: 'Club'`) passed all code review but broke `GameUser.load` on every connection. The feature was "present" in every file and still took down all logins.
+- **Puffles** (server#4/client#5): server plugin and client scene both fully implemented. Closed as built. The Pet Shop room 404s at runtime because `assets-clubpenguinlive/media/rooms/pet/pet-pack.json` was never created. Code present, feature completely inaccessible.
+
+**Check:** before closing any feature issue, verify the critical path executes: the user can reach the feature, interact with it, and receive the expected outcome. For game economy features, verify a payout event fires server-side.
+
+### 2. Cross-repo asset check
+
+For any feature that introduces a new room, minigame, or UI screen: before closing, verify that the assets repo contains the referenced files. Specifically:
+
+- The `*-pack.json` Phaser asset pack that the client scene loads on startup
+- The room media directory (`assets-clubpenguinlive/media/rooms/<room>/`) with actual sprite files
+- Any SWF or minigame file referenced by `triggerGame()` or a Ruffle mount
+
+**Check:** grep the client scene for `loadPack` or `assets/media/rooms/` and confirm each path exists in `assets-clubpenguinlive/`. Puffles failed precisely because no one verified `media/rooms/pet/` existed before closing.
+
+---
+
 ## Post-deploy smoke check (mandatory after any server deploy)
 
 After every `bash deploy.sh` that touches the server image (GameUser.load path, Clubs, auth, DB schema):
