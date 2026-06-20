@@ -9,7 +9,7 @@ Companion to `INFRA.md` (how it's wired); this doc is the backlog (what's left).
 Tags per item: **[decision-needed]** (gated on Nick), **[ready]** (buildable now, no decision),
 **[watch-it-render]** (must be eyeballed live), **[done-verify]** (already done; just confirm).
 
-**Reconciled 2026-06-19** (backlog sync): server#12 (mascot visits) reopened — confirmed not built. website#4+#5 (news + SEO) closed — shipped a9c6acb. server#5 (Stamps 100+) remains closed — 115 IDs already in data/stamps.json, scope folded into server#3. New issues filed: server#13 (Ninja Hideout, blocked), client#8 (Ruffle touch playtest, watch-it-render), server#14 (off-prod atomic builds, ready), website#8 (CF Insights beacon, decision-needed). Code verification confirmed built but previously unrecorded: puffles v1 (server#4 + client#5, Pet.js full ownership/care; closed correctly), leaderboard UI (client#6, LeaderboardPanel 6 tabs; closed correctly), Cooking/Pizzatron (server#8, MiniGame.js game 910 + skill:'cooking'; closed correctly), Performing/Stage (server#9, Performing.js perform_act 15XP/act; closed correctly). The §4 claim "Cooking/Performing have UI but no game" is stale — both are built. MASTER_PLAN updated to reflect. Login smoke harness at .local-scratch/smoke_login.js; run after every server deploy.
+**Reconciled 2026-06-19** (backlog sync): server#12 (mascot visits) reopened — confirmed not built. website#4+#5 (news + SEO) closed — shipped a9c6acb. server#5 (Stamps 100+) remains closed — 115 IDs already in data/stamps.json, scope folded into server#3. New issues filed: server#13 (Ninja Hideout, blocked), client#8 (Ruffle touch playtest, watch-it-render), server#14 (off-prod atomic builds, ready), website#8 (CF Insights beacon, decision-needed). **Updated 2026-06-20**: Puffles verified via smoke test (join_room 310 + get_pets PASS); server#4 + client#5 closed. Cooking/Pizzatron (server#8) confirmed NOT built (no SWF, no client trigger). Leaderboard (client#6) and Performing (server#9) confirmed built and closed. Login smoke harness at .local-scratch/smoke_login.js; pet smoke at .local-scratch/smoke_pet.js; run after every server deploy.
 
 **Refreshed 2026-06-09** against shipped code: the 06-08/09 session closed both room decisions
 (Stage, Recycling), shipped Daily Challenges and Stamps v1 end to end, fixed the sledding row,
@@ -287,9 +287,7 @@ play-rotation feature). Issue closed correctly.
 "wiring reserved; game not yet live." No Pizzatron SWF in assets; no `triggerGame(910)` in the
 client; the Pizza Parlor bead-door button is a non-functional hint. Server#8 reopened.
 
-**Puffles (server#4 + client#5) are NOT fully built.** Server Pet plugin events are implemented
-but `assets-clubpenguinlive/media/rooms/pet/pet-pack.json` does not exist — the Pet Shop room
-404s at runtime. Both issues reopened.
+**Puffles (server#4 + client#5) are fully built and verified 2026-06-20.** Pet Shop room 310 joins, server responds to get_pets, all assets serve HTTP 200 from piefruit base layer. Both issues closed.
 
 **Leaderboard (client#6)** is built: `LeaderboardPanel.js` sends `get_leaderboard`; server
 `Leaderboard.js` runs SQL queries with 5-min caching and returns top-50 rows. Closed correctly.
