@@ -2,6 +2,10 @@ import Bot from './Bot'
 
 // Preset NPCs (rooms must be valid non-game room ids from data/rooms.json).
 // Outfits use item ids verified to have worn paper art on disk; slots: head/face/neck/body/hand/feet.
+//
+// Mascot visits: set MASCOT_VISITS env var (JSON array) to schedule temporary room appearances:
+//   [{"mascot":"Rockhopper","room":100,"start":"2026-06-21T18:00:00Z","end":"2026-06-21T20:00:00Z"}]
+// The bot moves from its home room to the visit room at start, back at end.
 const PRESETS = [
     { name: 'Aunt Arctic',  color: 1,  room: 110, role: 'quest_giver', face: 113, neck: 175, body: 224, feet: 365, phrases: ['Have you read the latest paper?', "I'm working on a big story!", 'Knowledge is power!'] },
     { name: 'Gary',         color: 12, room: 803, role: 'quest_giver', head: 115, neck: 176, body: 769, feet: 352, phrases: ['Fascinating!', 'My latest invention is almost ready!', 'For science!'] },
@@ -52,6 +56,75 @@ export default class BotManager {
         }
 
         console.log(`[BotManager] spawned ${this.bots.length} NPCs`)
+        this.scheduleVisits()
+    }
+
+    scheduleVisits() {
+        const visits = (this.handler.config.mascotVisits) || []
+        if (!visits.length) return
+
+        const now = Date.now()
+
+        for (const visit of visits) {
+            const bot = this.bots.find(b => b.username === visit.mascot)
+            if (!bot) {
+                console.log(`[BotManager] visit skipped: no bot named "${visit.mascot}"`)
+                continue
+            }
+
+            const visitRoom = this.handler.rooms[visit.room]
+            if (!visitRoom || visitRoom.game) {
+                console.log(`[BotManager] visit skipped: invalid room ${visit.room} for ${visit.mascot}`)
+                continue
+            }
+
+            const startMs = new Date(visit.start).getTime()
+            const endMs   = new Date(visit.end).getTime()
+
+            if (endMs <= now) {
+                continue
+            }
+
+            if (startMs > now) {
+                const delay = startMs - now
+                console.log(`[BotManager] ${visit.mascot} visit to room ${visit.room} in ${Math.round(delay / 60000)}m`)
+                this.timers.push(setTimeout(() => this.beginVisit(bot, visitRoom), delay))
+            } else {
+                // Visit already started but hasn't ended — move in immediately.
+                this.beginVisit(bot, visitRoom)
+            }
+
+            const returnDelay = endMs - now
+            this.timers.push(setTimeout(() => this.endVisit(bot), returnDelay))
+        }
+    }
+
+    beginVisit(bot, visitRoom) {
+        if (bot.room) {
+            bot.room.remove(bot)
+        }
+        bot.x = this.randX()
+        bot.y = this.randY()
+        bot.room = visitRoom
+        visitRoom.add(bot)
+        visitRoom.send(bot, 'send_message', { id: bot.id, message: `${bot.username} has arrived!` })
+        console.log(`[BotManager] ${bot.username} visiting room ${visitRoom.id}`)
+    }
+
+    endVisit(bot) {
+        if (bot.room) {
+            bot.room.remove(bot)
+        }
+        const homeRoom = this.handler.rooms[bot.homeRoom]
+        if (homeRoom && !homeRoom.game) {
+            bot.x = this.randX()
+            bot.y = this.randY()
+            bot.room = homeRoom
+            homeRoom.add(bot)
+        } else {
+            bot.room = null
+        }
+        console.log(`[BotManager] ${bot.username} returned home`)
     }
 
     scheduleBehavior(bot) {
