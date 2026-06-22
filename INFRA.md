@@ -49,9 +49,9 @@ Request flow: browser → Cloudflare edge → Tunnel → nginx:80 → static `di
 
 | Path | What |
 |---|---|
-| `client/` | git repo (`client-clubpenguinlive`, branch `main`). Source; nginx serves the built `client/dist`. |
-| `server/` | git repo (`server-clubpenguinlive`, branch `master`). pm2 runs `server/dist/World.js`. |
-| `piefruit-assets/` | game media (atlases/fonts/music), symlinked into `client/dist` by the rebuild. **Base** = upstream `gitgud.io/piefruit/assets` @ `9e6a576d` (~3.5G, not mirrored). CP Live's ~58MB of overrides (configs/strings/art/music) live in the **`assets-clubpenguinlive`** repo and are overlaid on top (see §6). |
+| `client/` | git repo (`cpl-client`, branch `main`). Source; nginx serves the built `client/dist`. |
+| `server/` | git repo (`cpl-server`, branch `master`). pm2 runs `server/dist/World.js`. |
+| `piefruit-assets/` | game media (atlases/fonts/music), symlinked into `client/dist` by the rebuild. **Base** = upstream `gitgud.io/piefruit/assets` @ `9e6a576d` (~3.5G, not mirrored). CP Live's ~58MB of overrides (configs/strings/art/music) live in the **`cpl-assets`** repo and are overlaid on top (see §6). |
 | `community-forks/` | reference forks (cpj2, cpa, mammoth, html5-minigames) — source material, not served. |
 | `minigames/` | html5 minigames, symlinked into `dist`. |
 | `recover_rebuild.sh` | the client build+stage script (see §6). **prod-only, untracked, hardcodes the sudo pw — TODO: version-control + NOPASSWD sudoers.** |
@@ -92,7 +92,7 @@ edit + commit + git push origin   (dev-01 → GitHub, source of truth)
 Each repo has `deploy.sh` (run from dev-01) + `DEPLOY.md`. `deploy.sh` runs a pre-flight that refuses
 to deploy unless the gitignored runtime config exists+valid on the target.
 
-**Assets** are the third deployable: **`assets-clubpenguinlive`** holds only CP Live's overrides on the
+**Assets** are the third deployable: **`cpl-assets`** holds only CP Live's overrides on the
 piefruit base (game config/strings, custom room art, music, SWFs, fonts, branding). Its `deploy.sh`
 tars `fonts/` + `media/` and overlays them onto prod's `/opt/yukon/piefruit-assets`, then rebuilds the
 client (so the cache-busted crumbs/assets are re-served). Game prompt strings (the `<key>_prompt` yes/no

@@ -7,10 +7,10 @@ see `CONTAINERIZATION-PROVISIONING.md`.
 ## Images (four)
 | Image | Built from | Contents |
 |---|---|---|
-| `cpl-assets-base` | `assets-clubpenguinlive` + a piefruit checkout | nginx + the ~2 GB piefruit `media`/`fonts` (CPL overlay on top), baked at `/usr/share/nginx/html/assets`. Rarely rebuilt (decision 13). |
-| `cpl-web` | `client-clubpenguinlive/Dockerfile.web` | `FROM cpl-assets-base`; webpack-built client `dist` + `styles`/`lib` + `create`/`account`/`pages`/`minigames` + branding + this `nginx.conf`. |
-| `cpl-php` | `client-clubpenguinlive/Dockerfile.php` | php-fpm 8.3 + the `create`/`account` PHP at the same docroot path nginx uses; `db-config.php` rendered from env at startup. |
-| `cpl-server` | `server-clubpenguinlive/Dockerfile` | Node 24 game server. One image, three roles via env: `WORLD=Login` (:6111), `WORLD=Blizzard` (:6112), `MODE=migrate` (one-shot). |
+| `cpl-assets-base` | `cpl-assets` + a piefruit checkout | nginx + the ~2 GB piefruit `media`/`fonts` (CPL overlay on top), baked at `/usr/share/nginx/html/assets`. Rarely rebuilt (decision 13). |
+| `cpl-web` | `cpl-client/Dockerfile.web` | `FROM cpl-assets-base`; webpack-built client `dist` + `styles`/`lib` + `create`/`account`/`pages`/`minigames` + branding + this `nginx.conf`. |
+| `cpl-php` | `cpl-client/Dockerfile.php` | php-fpm 8.3 + the `create`/`account` PHP at the same docroot path nginx uses; `db-config.php` rendered from env at startup. |
+| `cpl-server` | `cpl-server/Dockerfile` | Node 24 game server. One image, three roles via env: `WORLD=Login` (:6111), `WORLD=Blizzard` (:6112), `MODE=migrate` (one-shot). |
 
 ## Config (decision 8)
 A single gitignored `.env` (from `.env.example`) feeds every service. Each image's entrypoint renders
@@ -54,10 +54,10 @@ A feature is closeable only when it runs end to end: renders on screen, plays, p
 For any feature that introduces a new room, minigame, or UI screen: before closing, verify that the assets repo contains the referenced files. Specifically:
 
 - The `*-pack.json` Phaser asset pack that the client scene loads on startup
-- The room media directory (`assets-clubpenguinlive/media/rooms/<room>/`) with actual sprite files
+- The room media directory (`cpl-assets/media/rooms/<room>/`) with actual sprite files
 - Any SWF or minigame file referenced by `triggerGame()` or a Ruffle mount
 
-**Check:** grep the client scene for `loadPack` or `assets/media/rooms/` and confirm each path exists in `assets-clubpenguinlive/` or the piefruit base layer in prod. Cooking/Pizzatron failed this check: game 910 is in MiniGame.js but the SWF is absent from the assets repo and there is no client trigger.
+**Check:** grep the client scene for `loadPack` or `assets/media/rooms/` and confirm each path exists in `cpl-assets/` or the piefruit base layer in prod. Cooking/Pizzatron failed this check: game 910 is in MiniGame.js but the SWF is absent from the assets repo and there is no client trigger.
 
 ---
 
