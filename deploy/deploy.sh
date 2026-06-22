@@ -14,9 +14,9 @@
 set -euo pipefail
 
 CPL_ROOT="${CPL_ROOT:-$HOME/Documents/clubpenguinlive}"
-SERVER="$CPL_ROOT/server-clubpenguinlive"
-CLIENT="$CPL_ROOT/client-clubpenguinlive"
-ASSETS="$CPL_ROOT/assets-clubpenguinlive"
+SERVER="$CPL_ROOT/cpl-server"
+CLIENT="$CPL_ROOT/cpl-client"
+ASSETS="$CPL_ROOT/cpl-assets"
 REGISTRY="${REGISTRY:-ghcr.io/clubpenguinlive}"
 TAG="${TAG:-$(date +%Y%m%d)-$(git -C "$SERVER" rev-parse --short HEAD 2>/dev/null || echo manual)}"
 PIEFRUIT_DIR="${PIEFRUIT_DIR:?set PIEFRUIT_DIR to a piefruit assets checkout (pinned $PIEFRUIT_REF)}"
@@ -60,7 +60,7 @@ fi
 
 if [ "${DEPLOY:-0}" = "1" ]; then
   echo "==> deploying tag $TAG to $DEPLOY_HOST (app images only; DB volume untouched)"
-  ssh "$DEPLOY_HOST" "cd ~/cpl/server-clubpenguinlive/deploy && IMAGE_TAG='$TAG' docker compose pull && IMAGE_TAG='$TAG' docker compose up -d --remove-orphans"
+  ssh "$DEPLOY_HOST" "cd ~/cpl/cpl-server/deploy && IMAGE_TAG='$TAG' docker compose pull && IMAGE_TAG='$TAG' docker compose up -d --remove-orphans"
 fi
 
 echo "done. tag = $TAG"

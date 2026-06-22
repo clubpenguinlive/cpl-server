@@ -97,19 +97,19 @@ iPhone rotate + buffer; 1440p autofit. Recycling and Challenge claim cleared 202
 | **Recycling +3 coins [watch-it-render]** | CONFIRMED PASS (automated) | `smoke_watch_it_render.js` harness: `recycle_reward` event, `+3`, `total=104810`, `capped=false` |
 | **Challenge claim [watch-it-render]** | CONFIRMED PASS (automated) | Harness: `challenge_claimed` event, `reward=100`, `new coins=104910` |
 | **Hidden Lake stamp_earned [watch-it-render]** | CONFIRMED PASS (automated) | Harness: `stamp_earned` fires on room 814 entry (`stamp=30`, `name="Lake Finder"`) |
-| **Deploy scripts rewritten for Docker** | DONE | All three per-repo `deploy.sh` now use git-archive overlay + remote `docker build`; `deploy/deploy.sh` SSH alias (`cpl-01` → `cpl-prod`) and remote path (`/opt/cpl` → `~/cpl/server-clubpenguinlive/deploy`) fixed |
+| **Deploy scripts rewritten for Docker** | DONE | All three per-repo `deploy.sh` now use git-archive overlay + remote `docker build`; `deploy/deploy.sh` SSH alias (`cpl-01` → `cpl-prod`) and remote path (`/opt/cpl` → `~/cpl/cpl-server/deploy`) fixed |
 | **CF website unblocked** | DONE | `account_id` added to `wrangler.jsonc` (`fd376ed`); new CF Workers build triggered after repo rename |
 
 ### Reality vs notes/memory — contradictions
 
 - **FEATURE_AUDIT.md** closes with "None of the above is started" for A1/A2/A3 — contradicted;
   all three shipped the same day, after the file was written. Treat FEATURE_AUDIT §A as historical.
-- **Memory `cpl-flags`** says "Marketing repo renamed to `website-clubpenguinlive`." Contradicted:
+- **Memory `cpl-flags`** says "Marketing repo renamed to `cpl-web`." Contradicted:
   the live repo is `github.com/clubpenguinlive/clubpenguinlive.net` (origin confirmed), the local
-  folder is `clubpenguinlive.net`, and the live site serves from it. No `website-clubpenguinlive`
+  folder is `clubpenguinlive.net`, and the live site serves from it. No `cpl-web`
   exists on disk. The rename either never happened or was reverted.
 - **FEATURE_AUDIT "Ninja Hideout now buildable via the assets repo"** is imprecise. `hideout` art
-  is NOT in `assets-clubpenguinlive` (that repo holds only the 15 already-customized rooms). It's
+  is NOT in `cpl-assets` (that repo holds only the 15 already-customized rooms). It's
   buildable via the native-room-port recipe: pull `hideout` from `CPJourney-2/assets` onto prod's
   piefruit tree, then commit the override + the client scene. See §2.7.
 - **The perf audit's marketing-CSP finding is stale** (already fixed live). Do not re-apply.
@@ -133,7 +133,7 @@ the rest classic CP Flash SWFs via the self-hosted Ruffle harness); the Tier-5 g
 (Fishing/Mining/Surfing/Hauling minigames → server-capped coins + skill XP + resources → Skills
 panel + sell-for-coins trade-in); mobile corner-chip nav + slim toolbar; and the four-repo
 dev-01→prod deploy chain (`client`/`server`/`assets`-clubpenguinlive + the apex
-`website-clubpenguinlive`). Verified 2026-06-18: both sites 200, DB intact (4 users/4 igloos),
+`cpl-web`). Verified 2026-06-18: both sites 200, DB intact (4 users/4 igloos),
 marketing CSP hardened, containerized stack healthy.
 
 ---
