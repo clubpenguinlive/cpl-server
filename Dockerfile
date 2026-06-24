@@ -22,5 +22,8 @@ COPY --from=build /app/utils ./utils
 COPY --from=build /app/migrations ./migrations
 COPY deploy/entrypoint-server.sh /usr/local/bin/entrypoint.sh
 RUN sed -i 's/\r$//' /usr/local/bin/entrypoint.sh && chmod +x /usr/local/bin/entrypoint.sh
+RUN groupadd -r app && useradd -r -g app app \
+    && chown -R app:app /app
+USER app
 EXPOSE 6111 6112
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
