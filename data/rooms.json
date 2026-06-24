@@ -280,6 +280,14 @@
     "spawn": 0
   },
   {
+    "id": 910,
+    "name": "pizzatron",
+    "member": 0,
+    "maxUsers": 80,
+    "game": 1,
+    "spawn": 0
+  },
+  {
     "id": 911,
     "name": "mission3",
     "member": 0,
