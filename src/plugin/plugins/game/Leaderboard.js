@@ -4,7 +4,7 @@ import { QueryTypes } from 'sequelize'
 
 const CACHE_TTL = 5 * 60 * 1000
 
-const VALID_CATEGORIES = new Set(['coins', 'stamps', 'total_xp', 'fishing', 'mining', 'surfing', 'hauling', 'sledding'])
+const VALID_CATEGORIES = new Set(['stamps', 'total_xp', 'fishing', 'mining', 'surfing', 'hauling', 'sledding'])
 
 export default class Leaderboard extends GamePlugin {
 
@@ -19,8 +19,8 @@ export default class Leaderboard extends GamePlugin {
     }
 
     async getLeaderboard(args, user) {
-        const category = args.category || 'coins'
-        if (!VALID_CATEGORIES.has(category)) return
+        const category = args.category
+        if (!category || !VALID_CATEGORIES.has(category)) return
 
         const now = Date.now()
         const cached = this._cache[category]
@@ -39,13 +39,6 @@ export default class Leaderboard extends GamePlugin {
 
     async fetchRows(category) {
         const seq = this.db.sequelize
-
-        if (category === 'coins') {
-            return seq.query(
-                `SELECT id, username, color, coins AS value FROM users ORDER BY coins DESC LIMIT 50`,
-                { type: QueryTypes.SELECT }
-            )
-        }
 
         if (category === 'stamps') {
             return seq.query(
