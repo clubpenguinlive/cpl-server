@@ -14,7 +14,7 @@ export default class Server {
         this.handler = handler
         this.config = config
 
-        const io = this.createIo(config.socketio, {
+        const { io, httpServer } = this.createIo(config.socketio, {
             cors: {
                 origin: config.cors.origin,
                 methods: ['GET', 'POST']
@@ -26,17 +26,19 @@ export default class Server {
             ? new RateLimiter(config)
             : null
 
-        this.server = io.listen(config.worlds[id].port)
+        this.server = io
+        httpServer.listen(config.worlds[id].port)
 
         this.server.on('connection', socket => this.onConnection(socket))
     }
 
     createIo(config, options) {
-        const server = config.https
+        const httpServer = config.https
             ? this.httpsServer(config.ssl)
             : this.httpServer()
 
-        return require('socket.io')(server, options)
+        const io = require('socket.io')(httpServer, options)
+        return { io, httpServer }
     }
 
     httpServer() {
