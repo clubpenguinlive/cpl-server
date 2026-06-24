@@ -100,6 +100,7 @@ services:
     restart: unless-stopped
     environment:
       <<: *db-env
+      TURNSTILE_SECRET: ${TURNSTILE_SECRET}
     depends_on:
       mariadb:
         condition: service_healthy
