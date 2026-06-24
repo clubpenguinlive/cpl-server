@@ -40,7 +40,21 @@ export default class Server {
     }
 
     httpServer() {
-        return require('http').createServer()
+        const server = require('http').createServer((req, res) => {
+            if (req.method === 'GET' && req.url === '/players') {
+                const count = Object.values(this.users).filter(u => u.authenticated).length
+                const body = JSON.stringify({ world: this.id, players: count })
+                res.writeHead(200, {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': 'https://clubpenguinlive.net'
+                })
+                res.end(body)
+            } else {
+                res.writeHead(404)
+                res.end()
+            }
+        })
+        return server
     }
 
     httpsServer(ssl) {
