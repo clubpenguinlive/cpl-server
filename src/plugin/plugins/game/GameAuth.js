@@ -65,9 +65,11 @@ export default class GameAuth extends GamePlugin {
             return user.close()
         }
 
-        // Verify hash
+        // Verify hash (timing-safe: prevents oracle timing attacks on the login hash)
         let hash = user.createLoginHash(args.key)
-        if (decoded.hash != hash) {
+        const hashA = Buffer.from(decoded.hash || '')
+        const hashB = Buffer.from(hash || '')
+        if (hashA.length !== hashB.length || !crypto.timingSafeEqual(hashA, hashB)) {
             return user.close()
         }
 
