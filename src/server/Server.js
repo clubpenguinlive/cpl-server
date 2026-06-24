@@ -19,7 +19,7 @@ export default class Server {
                 origin: config.cors.origin,
                 methods: ['GET', 'POST']
             },
-            path: '/'
+            path: '/world/'
         })
 
         this.rateLimiter = config.rateLimit.enabled
