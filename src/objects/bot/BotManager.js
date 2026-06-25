@@ -57,6 +57,7 @@ export default class BotManager {
 
         console.log(`[BotManager] spawned ${this.bots.length} NPCs`)
         this.scheduleVisits()
+        this.scheduleAutoVisits()
     }
 
     scheduleVisits() {
@@ -125,6 +126,35 @@ export default class BotManager {
             bot.room = null
         }
         console.log(`[BotManager] ${bot.username} returned home`)
+    }
+
+    scheduleAutoVisits() {
+        const now = new Date()
+        const hour = now.getUTCHours()
+
+        if (hour < 15 || hour >= 21) {
+            // Outside peak hours (15:00-21:00 UTC). Check again in 30 min.
+            this.timers.push(setTimeout(() => this.scheduleAutoVisits(), 30 * 60 * 1000))
+            return
+        }
+
+        // Bots currently in their home room are eligible for an auto-visit.
+        const eligible = this.bots.filter(b => b.room && b.room.id === b.homeRoom)
+        if (eligible.length) {
+            const bot = eligible[Math.floor(Math.random() * eligible.length)]
+            const rooms = Object.values(this.handler.rooms).filter(r => !r.game && r.id !== bot.homeRoom)
+            if (rooms.length) {
+                const visitRoom = rooms[Math.floor(Math.random() * rooms.length)]
+                const duration = 30 + Math.floor(Math.random() * 31) // 30-60 min
+                console.log(`[BotManager] auto-visit: ${bot.username} -> room ${visitRoom.id} for ${duration}min`)
+                this.beginVisit(bot, visitRoom)
+                this.timers.push(setTimeout(() => this.endVisit(bot), duration * 60 * 1000))
+            }
+        }
+
+        // Schedule next auto-visit cycle in 45-75 min.
+        const next = (45 + Math.floor(Math.random() * 31)) * 60 * 1000
+        this.timers.push(setTimeout(() => this.scheduleAutoVisits(), next))
     }
 
     scheduleBehavior(bot) {
