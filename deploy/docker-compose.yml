@@ -109,7 +109,7 @@ services:
   cpl-web:
     image: ${REGISTRY:-ghcr.io/clubpenguinlive}/cpl-web:${IMAGE_TAG:-stable}
     restart: unless-stopped
-    # No host ports published: cloudflared reaches nginx over the compose network (ingress -> http://cpl-web:80).
+    # No host ports published: cloudflared reaches nginx over the compose network (ingress -> http://cpl-web:8080).
     depends_on: [cpl-login, cpl-blizzard, cpl-blizzard2, cpl-php]
     networks: [cpl]
 
