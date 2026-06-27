@@ -141,19 +141,6 @@ export default class Database {
         })
     }
 
-    async getClubLeaderboard() {
-        return await this.clubs.findAll({
-            attributes: ['id', 'name', 'tag', 'xp'],
-            order: [['xp', 'DESC']],
-            limit: 20,
-            include: [{
-                model: this.clubMembers,
-                as: 'members',
-                attributes: []
-            }]
-        })
-    }
-
     async getWorldPopulations() {
         return await this.getCrumb('worlds')
     }

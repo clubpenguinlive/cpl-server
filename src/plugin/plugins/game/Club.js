@@ -18,8 +18,7 @@ export default class Club extends GamePlugin {
             'create_club': this.createClub,
             'join_club': this.joinClub,
             'leave_club': this.leaveClub,
-            'club_info': this.clubInfo,
-            'club_leaderboard': this.clubLeaderboard
+            'club_info': this.clubInfo
         }
     }
 
@@ -122,11 +121,6 @@ export default class Club extends GamePlugin {
             memberCount: club.members.length,
             members: club.members.map(m => ({ userId: m.userId, role: m.role }))
         })
-    }
-
-    async clubLeaderboard(args, user) {
-        const clubs = await this.db.getClubLeaderboard()
-        user.send('club_leaderboard', { clubs: clubs.map(c => ({ id: c.id, name: c.name, tag: c.tag, xp: c.xp })) })
     }
 
     broadcastClubUpdate(user) {
