@@ -58,5 +58,11 @@
         "cost": 800,
         "member": 1,
         "ranPostcard": 185
+    },
+    "10": {
+        "name": "Rainbow",
+        "cost": 800,
+        "member": 1,
+        "ranPostcard": 186
     }
 }
