@@ -127,3 +127,8 @@ config/*.bak*
 
 # verify-game skill screenshot output
 verify_game.png
+
+# scratch / smoke-test helpers
+smoke_login.js
+smoke.sh
+run_smoke_login.sh

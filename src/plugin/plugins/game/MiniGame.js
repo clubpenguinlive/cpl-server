@@ -9,7 +9,7 @@ const GAME_ECONOMY = {
     904: { skill: 'fishing', maxCoins: 800,  resource: 'fish'  },   // Ice Fishing
     905: { skill: 'mining',  maxCoins: 800,  resource: 'ore'   },   // Cart Surfer / Mine
     912: { skill: 'surfing', maxCoins: 1200, resource: 'shell' },   // Catchin' Waves
-    910: { skill: 'cooking',  maxCoins: 800,  resource: 'pizza' }, // Pizzatron 3000 (wiring reserved; game not yet live)
+    910: { skill: 'cooking',  maxCoins: 800,  resource: 'pizza' }, // Pizzatron 3000
     999: { skill: 'sledding', maxCoins: 800 },   // Sled Racing (html5 single-player, placement payout)
     900: { skill: null, maxCoins: 800 },    // Astro Barrier
     902: { skill: null, maxCoins: 800 },    // Bits and Bolts
