@@ -1,5 +1,13 @@
 # Yukon Server
 
+> **This is `cpl-server`, the Club Penguin Live game server (a fork of wizguin/yukon-server).**
+> Everything below is the upstream README. It is useful for local development (MySQL + `npm run
+> dev`), but the "Production Usage" section and the pm2-based `npm run start/stop/restart/list/logs/
+> monit` commands are upstream bare-metal instructions and are **not** how CPL runs in production.
+> CPL prod is a Docker Compose stack with three worlds (Login, Blizzard, and Iceberg running as the
+> `cpl-blizzard2` container), deployed from the repo root with `deploy.sh`. For the real deploy see
+> **[DEPLOY.md](DEPLOY.md)**. Do not follow the pm2 path for prod.
+
 Visit the Discord server for more support.
 
 [![Yukon Discord members](https://badgen.net/discord/members/NtYtpzyxBu)](https://discord.gg/NtYtpzyxBu)
