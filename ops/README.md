@@ -6,7 +6,7 @@ the sudo password; that secret has been removed (see below).
 
 | Repo copy | Deployed to | Purpose | Sudo |
 |---|---|---|---|
-| `ops/recover_rebuild.sh` | `/opt/yukon/recover_rebuild.sh` | Load-bearing client rebuild (relays static assets `npm run build` wipes). Run on every client deploy. | best-effort `sudo -n` for one-time swap setup only (dormant; swap already present) |
+| `ops/recover_rebuild.sh` | `/opt/yukon/recover_rebuild.sh` | Dormant. Bare-VM client rebuild that re-laid the static assets `npm run build` wiped. Superseded by the Docker build: the `cpl-web` image (in cpl-client) now assembles the client and its assets, so this is not run in the container stack. Kept for reference / rollback to a bare-VM host. | best-effort `sudo -n` for one-time swap setup only (dormant; swap already present) |
 | `ops/apply_csp.sh` | `/opt/yukon/apply_csp.sh` | Rewrite the nginx CSP + security headers for the game vhost. Run by hand for CSP changes. | interactive `sudo` (prompts) |
 | `ops/backup-db.sh` | `/opt/yukon/backup-db.sh` | Nightly DB dump + 14-day retention (cron 03:30). | none (uses `/opt/backups/.my.cnf`) |
 | `ops/rotate-db-password.sh` | run from repo | Rotate the MySQL `yukon` password across all consumers. | n/a |
@@ -30,5 +30,7 @@ here, e.g.:
 scp ops/recover_rebuild.sh nick@<prod>:/opt/yukon/recover_rebuild.sh
 ```
 
-`recover_rebuild.sh` is load-bearing: after changing it, run it once and confirm the verify lines
-(`CP-BLUE CHROME PRESENT`, `MOBILE ROTATE OVERLAY PRESENT`) before trusting it.
+`recover_rebuild.sh` is dormant in the container stack: the `cpl-web` Docker image now assembles the
+client and its assets at build time, so this script is not part of a normal deploy. It is kept for
+reference and for rolling back to a bare-VM host. If you ever do run it there, confirm the verify
+lines (`CP-BLUE CHROME PRESENT`, `MOBILE ROTATE OVERLAY PRESENT`) before trusting the result.
