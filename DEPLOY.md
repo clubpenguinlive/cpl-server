@@ -3,54 +3,52 @@
 **The repo is the source of truth. dev-01 is where you work. prod only runs what it is given.**
 
 ```
-edit + commit + push   →   deploy to prod   →   build + restart   →   verify
-       (dev-01)                (git push)            (on prod)
+edit + commit + push  ->  overlay onto prod  ->  build image + recreate worlds  ->  verify
+       (dev-01)              (git archive)              (on prod host)
 ```
+
+The stack is containerized: the game server runs as Docker Compose services on the prod host, not
+as bare-metal pm2 processes. `deploy.sh` in the repo root is the canonical deploy.
 
 ## Rules
 
 - **All authoring happens on dev-01** (this clone). Edit, commit, and `git push origin master` here.
   dev-01 is the only machine that talks to GitHub.
-- **prod is a deploy target, not a dev box.** It never commits, never pushes, holds no GitHub
-  credentials, and runs `/opt/yukon/server` checked out to the last deployed commit.
-- **prod must always match a known commit.** Deploys are `git push` from dev-01 with
-  `receive.denyCurrentBranch=updateInstead` on prod: the working tree is checked out to the pushed
-  commit and the push is **refused if prod has any uncommitted hand-edit**.
-- **Never edit files directly on prod.** Make the change here, commit, deploy.
-- **Runtime secrets stay on prod only.** `config/config.json` (DB password, crypto secret, etc.) is
-  gitignored and exists only on prod. The repo tracks `config/config_example.json` (placeholders).
-  Never commit the real `config/config.json`.
+- **prod is a deploy target, not a dev box.** It never commits and holds no GitHub credentials. It
+  receives an overlay of the repo tree, builds the image locally, and runs the Compose stack.
+- **Never edit files directly on prod.** Make the change here, commit, deploy. A redeploy overwrites
+  the prod tree from `git archive`, so any hand-edit on prod is silently lost.
+- **Runtime secrets stay on prod only.** There is no committed `config.json` in the container path.
+  Each container renders its own `config.json` at startup from a single gitignored `.env` on the
+  host (`deploy/entrypoint-server.sh`). The repo tracks `config/config_example.json` (placeholders)
+  for local dev only.
 
-## One-time setup (already done)
+## The prod host
 
 - **`cpl-prod` is the single source for the prod address**, a Host alias in `~/.ssh/config` on
-  dev-01 (`HostName 10.0.0.72`, `User nick`). The deploy script, git remote, and these docs all
-  reference the alias; if prod's IP or user ever changes, edit only the ssh config. On a fresh
-  machine, recreate it:
+  dev-01 (`HostName 10.0.0.43`, `User nick`). `deploy.sh` and these docs reference the alias; if
+  prod's IP or user ever changes, edit only the ssh config. On a fresh machine, recreate it:
   ```
   Host cpl-prod
-      HostName 10.0.0.72
+      HostName 10.0.0.43
       User nick
       IdentityFile ~/.ssh/id_ed25519
   ```
-- dev-01 has a `prod` git remote: `cpl-prod:/opt/yukon/server`
-- prod has `git config receive.denyCurrentBranch updateInstead`
-- prod's GitHub (`cpl`) push URL is disabled
+- The overlaid repo tree lives at `~/cpl/cpl-server/` on the host. The Compose file is
+  `~/cpl/cpl-server/deploy/docker-compose.yml`.
 
-## First-time provisioning (new / rebuilt target)
+## Worlds (three)
 
-`config/config.json` (DB creds, crypto secret) is **gitignored and never shipped by git push**.
-On a fresh target, create it once from the example and fill it in:
+One `cpl-server` image runs all three worlds; the Compose env picks the role per container:
 
-```bash
-ssh cpl-prod
-cp /opt/yukon/server/config/config_example.json /opt/yukon/server/config/config.json
-# then edit config.json: real DB password, crypto.secret, etc.
-```
+| Container | WORLD | Port |
+|---|---|---|
+| `cpl-login` | `Login` | 6111 |
+| `cpl-blizzard` | `Blizzard` | 6112 |
+| `cpl-blizzard2` | `Iceberg` | 6113 |
 
-`deploy.sh` runs a **pre-flight** that refuses to deploy (before pushing anything) if
-`config.json` is missing or not valid JSON with a non-empty DB password, so a bad/absent config
-aborts the deploy instead of crash-looping the live server after the destructive build+restart.
+The third world is named **Iceberg** in config and nginx but runs in the `cpl-blizzard2` container.
+That asymmetry is intentional; do not rename either side.
 
 ## Deploy
 
@@ -63,27 +61,47 @@ From this repo on dev-01:
 which is:
 
 ```bash
-git push origin master      # publish to GitHub
-git push prod   master      # ship to prod (rejected if prod is dirty)
-ssh cpl-prod 'cd /opt/yukon/server && npm run build && npm run restart'
+git push origin master                                          # publish to GitHub
+git archive HEAD | ssh cpl-prod "tar -x -C ~/cpl/cpl-server/"    # overlay the tree onto prod
+ssh cpl-prod "docker build -t ghcr.io/clubpenguinlive/cpl-server:stable ~/cpl/cpl-server/"
+ssh cpl-prod "docker compose -f ~/cpl/cpl-server/deploy/docker-compose.yml \
+  up -d --no-deps cpl-login cpl-blizzard cpl-blizzard2"
 ```
 
-`npm run build` runs babel `src -> dist`; `npm run restart` is `pm2 restart ecosystem.config.js`
-(the **Login** and **Blizzard** processes, both run `dist/World.js`).
+The image is built on the prod host from the overlaid tree and tagged locally; nothing is pushed to
+a registry as part of the deploy. `up -d --no-deps` recreates only the three world containers and
+leaves mariadb, cpl-php, cpl-web, and cloudflared untouched.
 
-> **Heads up:** restarting bounces the live game and disconnects connected players. Deploy server
-> changes at low-traffic times, or warn players first.
+> **Heads up:** recreating the world containers bounces the live game and disconnects connected
+> players. Deploy server changes at low-traffic times, or warn players first.
+
+## Migrations (only when the schema changes)
+
+Migrations are additive-only and run as a one-shot `cpl-migrate` container that exits before the
+worlds start. If a deploy includes schema changes, apply them first:
+
+```bash
+ssh cpl-prod "docker compose -f ~/cpl/cpl-server/deploy/docker-compose.yml run --rm cpl-migrate"
+```
+
+Never `docker compose down -v`: the `mariadb-data` volume is external and sacred.
 
 ## Verify after deploy
 
 ```bash
-ssh cpl-prod 'pm2 list'          # Login + Blizzard online
-node <repo>/.local-scratch/verify_game.js   # from dev-01: both worlds connect, RESULT: PASS
+ssh cpl-prod "docker compose -f ~/cpl/cpl-server/deploy/docker-compose.yml ps"   # three worlds Up
 ```
+
+For any change to server-side logic a player sees, tell the lead to run cpl-verifier before the
+deploy is called done.
 
 ## Rollback
 
+Check the repo out to the last good commit and redeploy; the overlay plus rebuild replaces the prod
+tree and image:
+
 ```bash
-git push prod <previous-good-sha>:master --force-with-lease
-ssh cpl-prod 'cd /opt/yukon/server && npm run build && npm run restart'
+git checkout <previous-good-sha>
+./deploy.sh
+git checkout master
 ```

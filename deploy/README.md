@@ -1,5 +1,14 @@
 # CPL container stack
 
+> **Status: historical / superseded for the cpl-server deploy path.**
+> This file documents the original 2026-06-17 containerization bring-up: building all four images on
+> dev-01 and pushing them to `ghcr.io/clubpenguinlive` for the host to pull. Day-to-day cpl-server
+> deploys no longer work that way. The canonical server deploy is the repo-root `deploy.sh` (see
+> [`../DEPLOY.md`](../DEPLOY.md)): it overlays the repo tree onto the prod host with `git archive`,
+> builds the `cpl-server` image locally on the host, and recreates the three world containers
+> (`cpl-login`, `cpl-blizzard`, `cpl-blizzard2`). No ghcr push is involved. The first-time DB
+> cutover and the post-deploy smoke check below remain accurate as reference.
+
 Orchestration for the dockerized Club Penguin Live stack. Authored 2026-06-17; built per the locked
 decisions in the namespace-root `CONTAINERIZATION-DECISIONS.md`. Target host: `cpl-01` (10.0.0.43),
 see `CONTAINERIZATION-PROVISIONING.md`.
@@ -10,7 +19,7 @@ see `CONTAINERIZATION-PROVISIONING.md`.
 | `cpl-assets-base` | `cpl-assets` + a piefruit checkout | nginx + the ~2 GB piefruit `media`/`fonts` (CPL overlay on top), baked at `/usr/share/nginx/html/assets`. Rarely rebuilt (decision 13). |
 | `cpl-web` | `cpl-client/Dockerfile.web` | `FROM cpl-assets-base`; webpack-built client `dist` + `styles`/`lib` + `create`/`account`/`pages`/`minigames` + branding + this `nginx.conf`. |
 | `cpl-php` | `cpl-client/Dockerfile.php` | php-fpm 8.3 + the `create`/`account` PHP at the same docroot path nginx uses; `db-config.php` rendered from env at startup. |
-| `cpl-server` | `cpl-server/Dockerfile` | Node 24 game server. One image, three roles via env: `WORLD=Login` (:6111), `WORLD=Blizzard` (:6112), `MODE=migrate` (one-shot). |
+| `cpl-server` | `cpl-server/Dockerfile` | Node 24 game server. One image, four roles via env: `WORLD=Login` (:6111), `WORLD=Blizzard` (:6112), `WORLD=Iceberg` (:6113, runs as `cpl-blizzard2`), `MODE=migrate` (one-shot). |
 
 ## Config (decision 8)
 A single gitignored `.env` (from `.env.example`) feeds every service. Each image's entrypoint renders
@@ -19,6 +28,11 @@ DB-credential copies collapse to one source and no app code changes. Empty `RESE
 mailer in scaffold mode (codes logged, not sent), the safe default.
 
 ## Build + promote (on dev-01, the builder)
+
+> This `PUSH=1` / `DEPLOY=1` interface describes the original all-four-images bring-up and no longer
+> matches the repo-root `deploy.sh`, which builds only the `cpl-server` image on the prod host and
+> takes no such env flags. See [`../DEPLOY.md`](../DEPLOY.md) for the current server deploy.
+
 ```
 PIEFRUIT_DIR=/path/to/piefruit-assets PUSH=1 ./deploy.sh        # build all four, push to ghcr
 TAG=<tag> DEPLOY=1 ./deploy.sh                                   # recreate app images on cpl-01
