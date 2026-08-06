@@ -1,6 +1,7 @@
 import GamePlugin from '@plugin/GamePlugin'
 
 import { hasProps, isNumber, isString, isLength } from '@utils/validation'
+import { containsBlockedContent } from './moderation/contentFilter'
 
 
 export default class Chat extends GamePlugin {
@@ -54,6 +55,10 @@ export default class Chat extends GamePlugin {
         }
 
         if (args.message.startsWith('!') && this.processCommand(args.message, user)) {
+            return
+        }
+
+        if (containsBlockedContent(args.message)) {
             return
         }
 

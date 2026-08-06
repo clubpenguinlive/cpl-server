@@ -1,6 +1,7 @@
 import GamePlugin from '@plugin/GamePlugin'
 
 import { hasProps, isNumber } from '@utils/validation'
+import { containsBlockedContent } from './moderation/contentFilter'
 
 
 const CREATE_COST = 500
@@ -36,6 +37,9 @@ export default class Club extends GamePlugin {
         }
         if (!TAG_REGEX.test(tag)) {
             return user.send('error', { error: 'Club tag must be 2-4 uppercase letters or numbers.' })
+        }
+        if (containsBlockedContent(name) || containsBlockedContent(tag)) {
+            return user.send('error', { error: 'That club name or tag is not allowed.' })
         }
         if (user.coins < CREATE_COST) {
             return user.send('error', { error: `Creating a club costs ${CREATE_COST} coins.` })
