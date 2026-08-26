@@ -1,171 +1,82 @@
-# Yukon Server
+# cpl-server
 
-> **This is `cpl-server`, the Club Penguin Live game server (a fork of wizguin/yukon-server).**
-> Everything below is the upstream README. It is useful for local development (MySQL + `npm run
-> dev`), but the "Production Usage" section and the pm2-based `npm run start/stop/restart/list/logs/
-> monit` commands are upstream bare-metal instructions and are **not** how CPL runs in production.
-> CPL prod is a Docker Compose stack with three worlds (Login, Blizzard, and Iceberg running as the
-> `cpl-blizzard2` container), deployed from the repo root with `deploy.sh`. For the real deploy see
-> **[DEPLOY.md](DEPLOY.md)**. Do not follow the pm2 path for prod.
+The Node game server for [Club Penguin Live](https://github.com/clubpenguinlive), a fan-made
+recreation of the Club Penguin online game. This repo is the backend only: authentication, the
+Socket.IO game protocol, room/player state, and the MySQL-backed economy (coins, items, igloos,
+stamps, clubs). The web client that connects to it lives in a separate `cpl-client` repo.
 
-Visit the Discord server for more support.
+This is a fork of [wizguin/yukon-server](https://github.com/wizguin/yukon-server), the Yukon
+server framework, extended with Club Penguin Live's own gameplay systems.
 
-[![Yukon Discord members](https://badgen.net/discord/members/NtYtpzyxBu)](https://discord.gg/NtYtpzyxBu)
+## Tech stack
 
-## Built With
+- Node.js, [Socket.IO](https://socket.io/) for the game protocol
+- [Sequelize](https://sequelize.org/) over MySQL/MariaDB
+- Babel (source in `src/`, built to `dist/` for production)
+- Docker Compose for the production stack (see below)
 
-* [Node.js](https://nodejs.org/en/)
-* [Socket.IO](https://socket.io/)
-* [Sequelize](https://sequelize.org/)
+## Running it
+
+- **Local development:** MySQL/MariaDB + Node, run directly with `npm run dev`. See
+  "Local Installation" below.
+- **Self-hosting / production:** Docker Compose, using the images and compose file in this repo.
+  See **[DEPLOY.md](DEPLOY.md)** for a full walkthrough: prerequisites, configuring `.env`
+  secrets, building the image, and exposing the game worlds. Reverse proxy and TLS setup are the
+  operator's own responsibility; `DEPLOY.md` covers what the server itself expects.
 
 ## Local Installation
 
-These instructions will get you a copy of the project up and running on your local machine for development purposes.
-
 ### Prerequisites
 
-* [A MySQL database](https://www.mysql.com/)
-* [Node.js](https://nodejs.org/en/)
-* [yukon](https://github.com/wizguin/yukon)
+- [Node.js](https://nodejs.org/en/)
+- A MySQL or MariaDB database
+- A compatible client, e.g. [cpl-client](https://github.com/clubpenguinlive/cpl-client) or
+  [wizguin/yukon](https://github.com/wizguin/yukon)
 
-### Installation
+### Setup
 
-1. Clone this repository.
-
-```console
-git clone https://github.com/wizguin/yukon-server
-```
-
-2. Install node dependencies.
+1. Clone this repo and install dependencies.
 
 ```console
+git clone https://github.com/clubpenguinlive/cpl-server.git
+cd cpl-server
 npm install
 ```
 
-3. Copy "config_example.json" to a new file called "config.json".
+2. Copy `config/config_example.json` to `config/config.json` and fill in your database
+   credentials.
 
-4. Generate a new crypto secret.
+3. Generate a crypto secret (used for JWT/session signing):
 
 ```console
 npm run secret-gen
 ```
 
-5. Import yukon.sql into your MySQL database.
+4. Import the base schema from `yukon.sql` into your database, then apply the additive
+   migrations in `migrations/`:
 
-6. Update MySQL database credentials.
-
-```json
-"database": {
-    "host": "localhost",
-    "user": "user",
-    "password": "password",
-    "database": "yukon",
-    "dialect": "mysql",
-    "debug": false
-},
+```console
+npm run migrate
 ```
 
-### Usage
-
-* Running the dev server.
+5. Run the dev server (starts the Login and Blizzard worlds with hot reload):
 
 ```console
 npm run dev
 ```
 
-* Building the server for production.
+## World naming note
 
-```console
-npm run build
-```
+Club Penguin Live runs three worlds: Login, Blizzard, and a third world named **Iceberg** in
+config and client-facing text, which runs as a container named `cpl-blizzard2` in the production
+stack. This naming mismatch is intentional and preserved for historical reasons; it's not a bug.
 
-* Running the server in production mode. This will start all worlds listed in config.json.
+## Contributing
 
-```console
-npm run start
-```
+Open an issue or pull request. There's no formal contribution process beyond that yet, if
+something is unclear feel free to ask in an issue before sending a large PR.
 
-* Stopping production servers.
+## License
 
-```console
-npm run stop
-```
-
-* Restarting production servers.
-
-```console
-npm run restart
-```
-
-* Listing production servers.
-
-```console
-npm run list
-```
-
-* Display live logs for production servers
-
-```console
-npm run logs
-```
-
-* PM2 monitor for production servers.
-
-```console
-npm run monit
-```
-
-* Generate a new crypto secret.
-
-```console
-npm run secret-gen
-```
-
-### Account creation
-
-The easiest way to create accounts locally would be to simply enter them manually. Make sure to use a bcrypt hashed password, a tool such as [this](https://www.browserling.com/tools/bcrypt) can be used to generate one.
-
-```console
-$2a$10$nAxC5GXU0i/dacalTX.iZuRrtpmwmZ9ZzL.U3Zroh0jeSXiswFsne
-```
-
-## Production Usage
-
-The following is required when running the project in production.
-
-* The project must first be built using the build command.
-
-```console
-npm run build
-```
-
-* HTTPS can be configured as follows. Make sure your web server is also configured to use HTTPS.
-
-```console
-"socketio": {
-    "https": true,
-    "ssl": {
-        "cert": "/path/to/cert.crt",
-        "ca": "/path/to/ca.ca-bundle",
-        "key": "/path/to/key.key"
-    }
-},
-```
-
-* The CORS origin must be set. This will likely just be your domain name, e.g "example.com".
-
-```console
-"cors": {
-    "origin": "example.com"
-},
-```
-
-* Run the server in production mode.
-
-```console
-npm run start
-```
-
-## Disclaimer
-
-This project is a work in progress, please report any issues you find [here](https://github.com/wizguin/yukon-server/issues).
+MIT, see [LICENSE](LICENSE). This repo carries the original license and copyright from
+wizguin/yukon-server, on top of which Club Penguin Live's own systems are built.
