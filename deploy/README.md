@@ -10,7 +10,7 @@
 > cutover and the post-deploy smoke check below remain accurate as reference.
 
 Orchestration for the dockerized Club Penguin Live stack. Authored 2026-06-17; built per the locked
-decisions in the namespace-root `CONTAINERIZATION-DECISIONS.md`. Target host: `cpl-01` (10.0.0.43),
+decisions in the namespace-root `CONTAINERIZATION-DECISIONS.md`. Target host: the production VM,
 see `CONTAINERIZATION-PROVISIONING.md`.
 
 ## Images (four)
@@ -81,7 +81,7 @@ After every `bash deploy.sh` that touches the server image (GameUser.load path, 
 
 ```bash
 # Requires SSH tunnel to be up:
-ssh -L 18081:172.18.0.5:80 -N -f cpl-prod
+ssh -L 18081:<nginx-container-ip>:80 -N -f cpl-prod
 # Then from dev-01:
 node .local-scratch/smoke_login.js
 ```
@@ -89,7 +89,7 @@ node .local-scratch/smoke_login.js
 Expected output ends with: `PASS  Login recovery confirmed. getUserClub path is working.`
 
 If it fails, roll back before the next deploy. The tunnel port (18081) and nginx container IP
-(172.18.0.5) may change after a `docker compose down/up`; re-check with:
+change after every `docker compose down/up`; re-check the current container IP with:
 `ssh cpl-prod "docker inspect cpl-cpl-web-1 --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'"`
 
 This check is critical because a Sequelize association alias mismatch (e.g., `as: 'club'` vs `as: 'Club'`)
