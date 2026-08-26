@@ -3,6 +3,8 @@
 # Idempotent rotation of the MySQL 'yukon' password across every consumer on prod.
 #
 #   Run on the prod VM as root:   sudo bash /opt/yukon/server/ops/rotate-db-password.sh
+#   Override the app user (default "nick") if your deploy runs as someone else:
+#     sudo APP_USER=deploy bash /opt/yukon/server/ops/rotate-db-password.sh
 #
 # Consumers (all on prod, all gitignored / prod-only):
 #   1. /opt/yukon/server/config/config.json          (.database.password) - the game server
@@ -31,8 +33,8 @@ set -euo pipefail
 
 [ "$(id -u)" -eq 0 ] || { echo "ERROR: run as root (need mysql admin + edit /opt/backups/.my.cnf): sudo bash $0"; exit 1; }
 
-APP_USER=nick
-DB_USER=yukon
+APP_USER="${APP_USER:-nick}"
+DB_USER="${DB_USER:-yukon}"
 CFG_SERVER=/opt/yukon/server/config/config.json
 CFG_ACCOUNT=/opt/yukon/client/account/scripts/php/db-config.php
 CFG_CREATE=/opt/yukon/client/create/scripts/php/db-config.php
