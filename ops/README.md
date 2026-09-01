@@ -13,7 +13,7 @@ the sudo password; that secret has been removed (see below).
 
 ## Secret removal
 
-`recover_rebuild.sh` and `apply_csp.sh` previously contained `PW='private-penguin-2026'` piped into
+`recover_rebuild.sh` and `apply_csp.sh` previously contained a hardcoded sudo password piped into
 `sudo -S`. Removed:
 - `recover_rebuild.sh`: the swap block now uses non-interactive `sudo -n` and no-ops if it can't
   (swap is already configured on the box, so it never needs sudo on a normal rebuild).
