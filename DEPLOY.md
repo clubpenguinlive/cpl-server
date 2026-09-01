@@ -21,10 +21,14 @@ Everything below is generic: no real hostnames, IPs, or accounts. Fill in your o
 ```bash
 git clone https://github.com/clubpenguinlive/cpl-server.git
 cd cpl-server
-cp deploy/.env.example .env
+cp deploy/.env.example deploy/.env
 ```
 
-Edit `.env` and fill in every blank value. At minimum:
+`.env` lives in `deploy/`, next to `docker-compose.yml`. Docker Compose resolves `.env` relative
+to the compose file's own directory, and every command below runs with `-f deploy/docker-compose.yml`,
+so keeping it there means you don't need `--env-file` on every command.
+
+Edit `deploy/.env` and fill in every blank value. At minimum:
 
 | Variable | What it is |
 |---|---|
@@ -45,7 +49,7 @@ Optional:
   Irrelevant if you're running cpl-server standalone.
 - `BLIZZARD_MAX_USERS` / `BLIZZARD2_MAX_USERS` — per-world population caps, default 300.
 
-`.env` is gitignored. Never commit it.
+`deploy/.env` is gitignored. Never commit it.
 
 ## 2. Build the server image
 
@@ -68,6 +72,16 @@ IMAGE_TAG=dev
 then `docker build -t local/cpl-server:dev .`.
 
 ## 3. Bring up the stack
+
+`deploy/docker-compose.yml` declares its `mariadb-data` volume as `external: true`, meaning
+Compose expects it to already exist and will not create it for you. Create it once before the
+first `up`:
+
+```bash
+docker volume create mariadb-data
+```
+
+Then bring up the database:
 
 ```bash
 docker compose -f deploy/docker-compose.yml up -d mariadb

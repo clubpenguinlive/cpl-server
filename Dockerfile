@@ -1,5 +1,6 @@
-# cpl-server: Yukon Node game server. One image runs either world; the compose env selects which
-# (WORLD=Login -> :6111, WORLD=Blizzard -> :6112, MODE=migrate -> run migrations and exit).
+# cpl-server: Yukon Node game server. One image runs any world; the compose env selects which
+# (WORLD=Login -> :6111, WORLD=Blizzard -> :6112, WORLD=Iceberg -> :6113, MODE=migrate -> run
+# migrations and exit).
 # Build context = the server-clubpenguinlive repo root.
 
 FROM node:24-bookworm-slim AS build
@@ -25,5 +26,5 @@ RUN sed -i 's/\r$//' /usr/local/bin/entrypoint.sh && chmod +x /usr/local/bin/ent
 RUN groupadd -r app && useradd -r -g app app \
     && chown -R app:app /app
 USER app
-EXPOSE 6111 6112
+EXPOSE 6111 6112 6113
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

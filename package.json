@@ -1,7 +1,7 @@
 {
-  "name": "yukon-server",
+  "name": "cpl-server",
   "version": "1.11.0-beta",
-  "description": "A server for https://github.com/wizguin/yukon",
+  "description": "Node game server for Club Penguin Live: authentication, Socket.IO game protocol, and the MySQL-backed economy.",
   "scripts": {
     "dev": "babel-watch ./src/World.js Login Blizzard",
     "build": "rimraf dist && babel src -d dist --copy-files",
@@ -16,14 +16,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/wizguin/yukon-server.git"
+    "url": "git+https://github.com/clubpenguinlive/cpl-server.git"
   },
-  "author": "wizguin",
+  "author": "wizguin (original yukon-server), Club Penguin Live contributors",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/wizguin/yukon-server/issues"
+    "url": "https://github.com/clubpenguinlive/cpl-server/issues"
   },
-  "homepage": "https://github.com/wizguin/yukon-server#readme",
+  "homepage": "https://github.com/clubpenguinlive/cpl-server#readme",
   "devDependencies": {
     "@babel/cli": "^7.28.3",
     "@babel/core": "^7.28.3",
