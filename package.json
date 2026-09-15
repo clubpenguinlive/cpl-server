@@ -26,7 +26,7 @@
   "homepage": "https://github.com/clubpenguinlive/cpl-server#readme",
   "devDependencies": {
     "@babel/cli": "^7.28.3",
-    "@babel/core": "^7.28.3",
+    "@babel/core": "^7.29.7",
     "@babel/node": "^7.28.0",
     "@babel/preset-env": "^7.28.3",
     "babel-plugin-module-resolver": "^5.0.2",
