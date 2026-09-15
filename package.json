@@ -25,13 +25,13 @@
   },
   "homepage": "https://github.com/clubpenguinlive/cpl-server#readme",
   "devDependencies": {
-    "@babel/cli": "^7.28.3",
-    "@babel/core": "^7.28.3",
-    "@babel/node": "^7.28.0",
-    "@babel/preset-env": "^7.28.3",
-    "babel-plugin-module-resolver": "^5.0.2",
+    "@babel/cli": "^8.0.5",
+    "@babel/core": "^8.0.5",
+    "@babel/node": "^8.0.5",
+    "@babel/preset-env": "^8.0.5",
+    "babel-plugin-module-resolver": "^5.0.3",
     "babel-watch": "^7.8.1",
-    "rimraf": "^6.0.1",
+    "rimraf": "^6.1.3",
     "socket.io-client": "^4.8.3"
   },
   "dependencies": {
