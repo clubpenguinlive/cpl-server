@@ -55,6 +55,8 @@ services:
       EMAIL_FORCE_VERIFICATION: ${EMAIL_FORCE_VERIFICATION:-false}
       EMAIL_SKIP_FOR: ${EMAIL_SKIP_FOR:-[]}
     depends_on:
+      mariadb:
+        condition: service_healthy
       cpl-migrate:
         condition: service_completed_successfully
     networks: [cpl]
@@ -73,6 +75,8 @@ services:
       EMAIL_SKIP_FOR: ${EMAIL_SKIP_FOR:-[]}
       BLIZZARD_MAX_USERS: ${BLIZZARD_MAX_USERS:-300}
     depends_on:
+      mariadb:
+        condition: service_healthy
       cpl-migrate:
         condition: service_completed_successfully
     networks: [cpl]
@@ -91,6 +95,8 @@ services:
       EMAIL_SKIP_FOR: ${EMAIL_SKIP_FOR:-[]}
       BLIZZARD2_MAX_USERS: ${BLIZZARD2_MAX_USERS:-300}
     depends_on:
+      mariadb:
+        condition: service_healthy
       cpl-migrate:
         condition: service_completed_successfully
     networks: [cpl]

@@ -140,7 +140,13 @@ export default class GameHandler extends BaseHandler {
     }
 
     updateWorldPopulation() {
+        // Called from the constructor before the DB is guaranteed reachable. An uncaught
+        // rejection here kills the process, so log and carry on: the next population change
+        // rewrites the row anyway.
         this.db.worlds.update({ population: this.population }, { where: { id: this.id }})
+            .catch(error => {
+                console.error(`[${this.id}] Failed to update world population: ${error.message}`)
+            })
     }
 
 }
